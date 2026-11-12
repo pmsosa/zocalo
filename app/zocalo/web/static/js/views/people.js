@@ -17,7 +17,7 @@ export async function openPersonDrawer(pid, ctx = {}) {
   const p = await GET(`/api/people/${pid}`);
   const rec = p.record;
   const msgs = h("div.msgs");
-  const input = h("input", { type: "text", placeholder: t("Ask a follow-up…"), autocomplete: "off" });
+  const input = h("input", { type: "text", placeholder: t("Ask a follow-up…"), autocomplete: "off", enterkeyhint: "send" });
   let chatId = null;
   const model = await defaultModel(ctx.models?.[0]?.ref);
   const say = (cls, text, who) => { const m = h("div.msg." + cls, who ? h("span.who", who) : null, text); msgs.append(m); msgs.scrollTop = 1e9; return m; };
@@ -56,11 +56,12 @@ export async function openPersonDrawer(pid, ctx = {}) {
       h("a.ghost.small", { href: `#/people/${pid}`, onclick: () => close() }, t("full profile")),
       h("a.ghost.small", { href: `#/chats/new?ids=${pid}&kind=debate${ctx.study ? "&study=" + ctx.study.id : ""}`, onclick: () => close() }, t("debate someone"))),
     h("form.compose", { onsubmit: send }, input, h("button.btn", t("send"))));
-  document.body.append(drawer);
-  requestAnimationFrame(() => drawer.classList.add("on"));
+  const back = h("div.drawer-back", { onclick: () => close() });
+  document.body.append(back, drawer);
+  requestAnimationFrame(() => { drawer.classList.add("on"); back.classList.add("on"); });
   const esc = e => { if (e.key === "Escape") close(); };
   addEventListener("keydown", esc);
-  function close() { drawer?.classList.remove("on"); const d = drawer; setTimeout(() => d?.remove(), 300); drawer = null; removeEventListener("keydown", esc); }
+  function close() { drawer?.classList.remove("on"); back.classList.remove("on"); const d = drawer; setTimeout(() => { d?.remove(); back.remove(); }, 300); drawer = null; removeEventListener("keydown", esc); }
   onCleanup(close);
 }
 
@@ -96,7 +97,7 @@ export async function renderChats(_, v) {
   const d = await GET("/api/chats");
   v.append(h("div.page-head", h("h1", t("Conversations"), h("br"), h("span", t("Interviews, focus groups and debates."))),
     h("div.actions", h("a.btn", { href: "#/chats/new?kind=focus" }, t("new focus group")), h("a.btn.secondary", { href: "#/chats/new?kind=debate" }, t("new debate")))));
-  if (!d.chats.length) { v.append(h("div.card.empty", h("h2", t("No conversations yet")), h("p", t("Click any person's dot to talk to them, or start a focus group.")))); return; }
+  if (!d.chats.length) { v.append(h("div.card.empty", h("h2", t("No conversations yet")), h("p", t("Click or tap any person's dot to talk to them, or start a focus group.")))); return; }
   v.append(h("div.card", h("table.t", h("tbody", d.chats.map(c => h("tr.click", { onclick: () => location.hash = `#/chats/${c.id}` },
     h("td", h("span.tag", t(c.kind))), h("td", c.title || "—"), h("td.small.muted", c.people), h("td.num.small", `${c.n} ${t("messages")}`), h("td.small.faint", when(c.created_at))))))));
 }

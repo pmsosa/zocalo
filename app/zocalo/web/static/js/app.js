@@ -32,7 +32,7 @@ const ROUTES = [
 ];
 
 function renderNav() {
-  const path = location.hash.slice(1) || "/";
+  const path = (location.hash.slice(1) || "/").split("?")[0];
   const on = href => { const p = href.slice(1); return p === "/" ? (path === "/" || path.startsWith("/studies")) : path.startsWith(p); };
   const nav = $("#nav"); nav.innerHTML = "";
   for (const [href, label] of NAV) nav.append(h("a", { href, class: on(href) ? "on" : null }, t(label)));
@@ -65,14 +65,17 @@ function renderBanners() {
 async function route() {
   for (const fn of state.cleanup.splice(0)) try { fn(); } catch (e) { /* view already gone */ }
   document.getElementById("tip").classList.remove("on");
-  const path = location.hash.slice(1) || "/";
+  const path = (location.hash.slice(1) || "/").split("?")[0];
   if (state.me?.needs_login && path !== "/login") { location.hash = "#/login"; return; }
   renderNav();
   // each route renders into its own container, so a slow page that finishes late can't draw over the next one
   const v = document.createElement("div"); $("#view").replaceChildren(v); window.scrollTo(0, 0);
+  const loading = h("div.empty.loading", t("Loading…")); v.append(loading);
+  const obs = new MutationObserver(() => { if (v.childElementCount > 1) { loading.remove(); obs.disconnect(); } });
+  obs.observe(v, { childList: true });
   for (const [re, fn] of ROUTES) {
     const m = path.match(re);
-    if (m) { try { await fn(m.slice(1), v); } catch (e) { handle(e); } return; }
+    if (m) { try { await fn(m.slice(1), v); } catch (e) { handle(e); } finally { loading.remove(); obs.disconnect(); } return; }
   }
   v.append(h("div.empty", h("h2", t("Not found")), h("a.ghost", { href: "#/" }, t("Back to studies"))));
 }

@@ -2,6 +2,7 @@
   "name": "Zócalo",
   "short_name": "Zócalo",
   "description": "Simulated survey respondents, with honest error.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -125,7 +125,12 @@ async function renderResults(st, v) {
 
   // ---- side: question + results
   const qCard = h("div.card"), effectCard = h("div"), filterCard = h("div.card"), extra = h("div.grid");
-  side.append(qCard, effectCard, filterCard, howMade(res));
+  const phone = matchMedia("(max-width: 720px)").matches;
+  if (phone) {
+    const fold = h("details.card", h("summary", t("Filter people")), filterCard);
+    filterCard.classList.remove("card");
+    side.append(qCard, stage, effectCard, fold, howMade(res));
+  } else side.append(qCard, effectCard, filterCard, howMade(res));
   mainCol.append(extra);
 
   function renderQ() {
@@ -176,7 +181,7 @@ async function renderResults(st, v) {
   function renderAnsChips() {
     ansChips.innerHTML = "";
     ansChips.append(h("span.small.faint", { style: { alignSelf: "center", marginRight: "4px" } }, t("answered:")),
-      q().options.map((o, i) => h("button.chip", { class: ansFilter === i ? "on" : null, onclick: () => { ansFilter = ansFilter === i ? null : i; renderAnsChips(); selection(); renderQ(); renderAsk(); } }, o)));
+      ...q().options.map((o, i) => h("button.chip", { class: ansFilter === i ? "on" : null, onclick: () => { ansFilter = ansFilter === i ? null : i; renderAnsChips(); selection(); renderQ(); renderAsk(); } }, o)));
   }
   function renderAsk() {
     const sel = res.people.filter(p => inArm(p) && matches(p, flt) && (ansFilter == null || pick(p) === ansFilter));

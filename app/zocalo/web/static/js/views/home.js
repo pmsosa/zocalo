@@ -19,15 +19,15 @@ export async function render(_, v) {
       step(3, st.studies.length > 0, t("Ask a question"), t("Pick who to ask, write the question, see the cost, run it. Every result shows how far off it may be."), "#/studies/new", t("new study"))));
   }
   if (!st.studies.length) return;
-  const tbl = h("table.t", h("thead", h("tr", ["Study", "Question", "People", "Status", "Cost", "Created"].map(x => h("th", t(x))))));
+  const tbl = h("table.t", h("thead", h("tr", [["Study"], ["Question", "hide-phone"], ["People"], ["Status"], ["Cost", "hide-phone"], ["Created", "hide-phone"]].map(([x, c]) => h("th", { class: c }, t(x))))));
   const tb = h("tbody");
   for (const s of st.studies) {
     tb.append(h("tr.click", { onclick: () => location.hash = `#/studies/${s.id}` },
       h("td", h("b", { style: { fontWeight: 500 } }, s.name), h("div.small.faint", t(kindLabel(s.kind)))),
-      h("td", h("span.muted", s.first_question || ""), s.n_questions > 1 ? h("span.faint", ` +${s.n_questions - 1}`) : null),
+      h("td.hide-phone", h("span.muted", s.first_question || ""), s.n_questions > 1 ? h("span.faint", ` +${s.n_questions - 1}`) : null),
       h("td.small", s.population, s.source === "demo" ? h("span.faint", ` · ${t("demo")}`) : null),
       h("td", statusTag(s.status), s.status === "running" ? progressBar(s.progress) : null),
-      h("td.num", money(s.cost_actual || s.cost_estimate)), h("td.small.faint", when(s.created_at))));
+      h("td.num.hide-phone", money(s.cost_actual || s.cost_estimate)), h("td.small.faint.hide-phone", when(s.created_at))));
   }
   tbl.append(tb);
   v.append(h("div.card", h("div.scroll-x", tbl)));

@@ -68,6 +68,7 @@ export async function render([id], v) {
   }
   const actions = h("div.row");
   const src = { demo: t("Made-up people from rounded country shares. For trying the app; don't rely on results.") }[data.population.source];
+  const phone = matchMedia("(max-width: 720px)").matches;
   side.append(h("div.card", h("div.eyebrow", t("population")), pick,
       h("p.small.muted", { style: { margin: "10px 0 0" } }, src || meta.description || t("Built from {s}.", { s: data.population.source })),
       meta.weights ? h("p.small.faint", meta.weights) : null,
@@ -75,7 +76,8 @@ export async function render([id], v) {
         h("div.spacer"), h("button.link.small", { onclick: async () => {
           if (await confirmBox(t("Delete this population?"), t("Its people are deleted too. Studies that use it must be deleted first."), t("delete"))) {
             try { await DEL(`/api/populations/${cur.id}`); location.hash = "#/population"; } catch (e) { handle(e); } } } }, t("delete")))),
-    h("div.card", h("div.eyebrow", t("who to look at")), fe.el, who, actions));
+    phone ? h("details.card", h("summary", t("Filter people")), fe.el, who, actions) : h("div.card", h("div.eyebrow", t("who to look at")), fe.el, who, actions));
+  if (phone) side.insertBefore(stage, side.children[1]);
   upd();
 }
 

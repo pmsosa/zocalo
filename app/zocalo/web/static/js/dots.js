@@ -12,7 +12,8 @@ export function createDots(stage, opts) {
   const tip = document.getElementById("tip");
   let W = 0, H = 0, people = [], cats = [], cols = [], catOf = () => 0, groupOf = null, groupOrder = null, labelOf = null;
   let layout = opts.layout || "split", selected = () => true, groups = [], tMix = 0, splitGap = 99;
-  let rotY = 0, rotX = -0.32, spin = 0.0016, hover = null, drag = null, alive = true, raf = 0, bubbles = [];
+  let rotY = 0, rotX = -0.32, spin = 0.0016, hover = null, drag = null, alive = true, raf = 0, bubbles = [], lastTouch = 0;
+  const coarse = matchMedia("(pointer: coarse)").matches;
 
   function resize() {
     const r = stage.getBoundingClientRect(); const dpr = devicePixelRatio || 1;
@@ -53,7 +54,7 @@ export function createDots(stage, opts) {
     const narrow = W < 640;
     const perRow = narrow ? Math.min(keys.length, 2) : Math.min(keys.length, keys.length > 6 ? Math.ceil(keys.length / 2) : keys.length);
     const rows = Math.ceil(keys.length / Math.max(perRow, 1));
-    const top = narrow ? 70 : 120, bottom = 70;
+    const top = narrow ? 190 : 120, bottom = 70;  // on phones the title and controls sit above the dots
     const slotW = (W - 60) / perRow, slotH = (H - top - bottom) / rows;
     const rMax = Math.max(12, Math.min(slotW * .44, slotH * .36));
     splitGap = .9 * rMax * Math.sqrt(Math.PI / max);
@@ -111,7 +112,10 @@ export function createDots(stage, opts) {
       dot(k, p._x, p._y, size);
     }
     ctx.globalAlpha = 1;
-    for (const b of bubbles) { b.el.style.left = b.p._x + "px"; b.el.style.top = b.p._y + "px"; }
+    for (const b of bubbles) {  // keep bubbles inside the stage
+      const half = (b.el.offsetWidth || 200) / 2;
+      b.el.style.left = Math.max(half + 6, Math.min(W - half - 6, b.p._x)) + "px"; b.el.style.top = Math.max((b.el.offsetHeight || 60) + 18, b.p._y) + "px";
+    }
     if (hover) { ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--ink"); ctx.lineWidth = 1; ctx.strokeRect(hover._x - 5, hover._y - 5, 10, 10); }
     if (tMix > .5 && layout !== "sphere") {
       ctx.globalAlpha = (tMix - .5) * 2;
@@ -133,8 +137,8 @@ export function createDots(stage, opts) {
   raf = requestAnimationFrame(frame);
 
   // ---- hover / click / drag ----
-  function nearest(mx, my) {
-    let best = null, bd = UI.big ? 100 : 64;
+  function nearest(mx, my, touch = false) {
+    let best = null, bd = touch ? (UI.big ? 28 * 28 : 24 * 24) : (UI.big ? 100 : 64);
     const anySel = people.some(p => !selected(p));
     for (const p of people) {
       if (p._z < -.15 && tMix < .5) continue;
@@ -145,15 +149,22 @@ export function createDots(stage, opts) {
     return best;
   }
   function pos(e) { const r = cv.getBoundingClientRect(); const pt = e.touches ? e.touches[0] : e; return [pt.clientX - r.left, pt.clientY - r.top, pt.clientX, pt.clientY]; }
-  function showTip(p, cx, cy) {
+  function showTip(p, cx, cy, touch = false) {
     if (!opts.tip) return;
     tip.innerHTML = ""; tip.append(opts.tip(p));
-    tip.style.left = Math.min(cx + 16, innerWidth - 280) + "px";
-    tip.style.top = Math.min(cy + 16, innerHeight - 260) + "px";
+    tip.classList.toggle("touch", touch);
+    if (touch) {  // a card pinned above the tab bar, with a button instead of a hidden second tap
+      tip.style.left = tip.style.top = "";
+      if (opts.onClick) tip.append(h("button.btn", { style: { marginTop: "10px", width: "100%", justifyContent: "center" }, onclick: () => { hideTip(); opts.onClick(p); } }, t("Talk to them")));
+    } else {
+      tip.style.left = Math.min(cx + 16, innerWidth - 280) + "px";
+      tip.style.top = Math.min(cy + 16, innerHeight - 260) + "px";
+    }
     tip.classList.add("on");
   }
-  const hideTip = () => tip.classList.remove("on");
+  const hideTip = () => tip.classList.remove("on", "touch");
   cv.addEventListener("mousemove", e => {
+    if (Date.now() - lastTouch < 800) return;  // ignore the mouse events browsers fake after a tap
     const [mx, my, cx, cy] = pos(e);
     if (drag) {
       if (layout === "sphere") { rotY += (mx - drag.x) * .006; rotX = Math.max(-1.3, Math.min(1.3, rotX + (my - drag.y) * .006)); }
@@ -163,27 +174,30 @@ export function createDots(stage, opts) {
     if (hover) showTip(hover, cx, cy); else hideTip();
   });
   cv.addEventListener("mouseleave", () => { hover = null; hideTip(); });
-  cv.addEventListener("mousedown", e => { const [x, y] = pos(e); drag = { x, y, moved: 0 }; cv.classList.add("dragging"); hideTip(); });
-  const up = () => { if (drag && drag.moved < 4 && hover && opts.onClick) opts.onClick(hover); drag = null; cv.classList.remove("dragging"); };
+  cv.addEventListener("mousedown", e => { if (Date.now() - lastTouch < 800) return; const [x, y] = pos(e); drag = { x, y, moved: 0 }; cv.classList.add("dragging"); hideTip(); });
+  const up = () => { if (Date.now() - lastTouch < 800) return; if (drag && drag.moved < 4 && hover && opts.onClick) opts.onClick(hover); drag = null; cv.classList.remove("dragging"); };
   addEventListener("mouseup", up);
-  // touch: tap shows the card; tap the same person again to open them
+  // touch: a tap shows the person's card (with a "Talk to them" button). Sideways swipes turn the sphere;
+  // vertical swipes scroll the page.
   cv.addEventListener("touchstart", e => {
-    const [mx, my, cx, cy] = pos(e);
-    const p = nearest(mx, my);
-    drag = { x: mx, y: my, moved: 0, p };
+    lastTouch = Date.now();
+    const [mx, my] = pos(e);
+    drag = { x: mx, y: my, x0: mx, y0: my, moved: 0, p: nearest(mx, my, true), axis: null };
   }, { passive: true });
   cv.addEventListener("touchmove", e => {
     if (!drag) return; const [mx, my] = pos(e);
-    if (layout === "sphere") { rotY += (mx - drag.x) * .008; e.preventDefault(); }
+    if (!drag.axis && Math.abs(mx - drag.x0) + Math.abs(my - drag.y0) > 8) drag.axis = Math.abs(mx - drag.x0) > Math.abs(my - drag.y0) ? "x" : "y";
+    if (layout === "sphere" && drag.axis === "x") { rotY += (mx - drag.x) * .008; e.preventDefault(); }
     drag.moved += Math.abs(mx - drag.x) + Math.abs(my - drag.y); drag.x = mx; drag.y = my;
   }, { passive: false });
   cv.addEventListener("touchend", e => {
-    if (drag && drag.moved < 8 && drag.p) {
-      if (hover === drag.p && opts.onClick) { opts.onClick(drag.p); hideTip(); hover = null; }
-      else { hover = drag.p; const r = cv.getBoundingClientRect(); showTip(hover, r.left + hover._x, r.top + hover._y); }
-    } else if (drag && drag.moved < 8) { hover = null; hideTip(); }
+    lastTouch = Date.now();
+    if (drag && drag.moved < 8) {
+      e.preventDefault();
+      if (drag.p) { hover = drag.p; showTip(hover, 0, 0, true); } else { hover = null; hideTip(); }
+    }
     drag = null;
-  });
+  }, { passive: false });
 
   // ---- explore: speech bubbles ----
   function clearBubbles() { bubbles.forEach(b => b.el.remove()); bubbles = []; }
