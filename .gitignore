@@ -8,3 +8,4 @@ __pycache__/
 # logo explorations stay local until one is chosen
 /docs/logo-options/
 /mockups/logos/
+/mockups/logos.html
