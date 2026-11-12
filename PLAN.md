@@ -1,6 +1,6 @@
 # Zócalo — plan
 
-Status: planning (2026-11-11). Evidence behind the decisions is in
+Status: v1 built and running (2026-11-12): Phases 0–4 and 6 done; see "Status" at the end. Evidence behind the decisions is in
 [`docs/research.md`](docs/research.md).
 
 ## Goal
@@ -273,3 +273,25 @@ Licence rules:
 
 ## Open decisions
 - The logo: variations of the speech-square mark, with a dark-theme version and a simpler small-size version.
+
+## Status (2026-11-12)
+Built in one pass: Phases 0–4 and 6, plus the Phase 7 import format and maths.
+- Providers (Gemini, Anthropic, OpenAI, LiteLLM, OpenAI-compatible) with a live key check and a test call per model;
+  spending guard; Usage page.
+- Populations: demo; US ACS with attitudes matched from CES/GSS/Pew; UK and Canada census; respondents from CES, GSS,
+  WVS, ESS, Afrobarometer, Latinobarómetro, Arab Barometer and Pew.
+- Studies: survey, A/B, news test with placebo and same-person group; results with labelled error, subgroups, anchors,
+  human-sample correction, CSV.
+- Conversations: interviews on branches, focus groups, debates with no-discussion branches, drift checks.
+- Tests: twins of survey respondents, Twin-2K-500, GlobalOpinionQA, SimBench; baselines uniform, aggregate, anchor,
+  kNN; scoreboard; measured error feeds result labels.
+- App: population dots (split and explore), light and dark, colour-blind, shapes, English and Spanish, PWA, sign-in
+  or none, deploy.sh. A phone UX review was applied.
+- Docs: METHODOLOGY (EN/ES), DATA (EN/ES), README with demo screenshots.
+
+Still open:
+- The logo and banner (the user is choosing). Once chosen, run app-icons for the icon set and add the README banner.
+- Phase 5 (fine-tuning) and a paid human panel (Phase 7) were not in scope.
+- WVS, ESS, Arab Barometer and Pew are manual downloads; nothing is tested on them yet.
+- Measured error needs more test runs (20+ items per question type) before it replaces the published priors.
+
