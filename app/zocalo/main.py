@@ -30,7 +30,7 @@ OPEN_PATHS = ("/api/health", "/api/me", "/api/auth/")
 async def startup() -> None:
     db.init()
     security.auth_mode()
-    runner.recover_interrupted()
+    runner.resume_all(runner.recover_interrupted())
     from .harness import recover_interrupted as harness_recover
     harness_recover()
 
@@ -477,8 +477,9 @@ async def run_study(sid: int, request: Request):
         raise HTTPException(400, "This run would go over your monthly spending cap (Settings).")
     if est["needs_confirm"] and not b.get("confirm"):
         return {"needs_confirm": True, "estimate": est}
-    db.ex("UPDATE studies SET cost_estimate=? WHERE id=?", est["cost"], sid)
-    runner.start(sid, b.get("lang", "en"))
+    if not b.get("resume"):
+        db.ex("UPDATE studies SET cost_estimate=? WHERE id=?", est["cost"], sid)
+    runner.start(sid, b.get("lang", "en"), resume=bool(b.get("resume")))
     return {"ok": True, "estimate": est}
 
 

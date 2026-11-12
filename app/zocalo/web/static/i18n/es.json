@@ -303,6 +303,7 @@
   "Their position (pinned)": "Su postura (fija)",
   "These numbers set the error shown on every result. Until your own tests cover a type (20+ questions), Zócalo uses figures from published evaluations.": "Estos números definen el error que se muestra en cada resultado. Hasta que tus propias pruebas cubran un tipo (20+ preguntas), Zócalo usa cifras de evaluaciones publicadas.",
   "This document isn't translated yet; showing English.": "Este documento aún no está traducido; se muestra en inglés.",
+  "This study stopped before it finished.": "Este estudio se detuvo antes de terminar.",
   "This would go over your monthly cap. Raise it in Settings to run.": "Esto rebasaría tu tope mensual. Súbelo en Ajustes para correrlo.",
   "Tip: pick people from a study or the population page (filter, then “focus group”).": "Consejo: elige personas desde un estudio o la página de población (filtra y luego “grupo focal”).",
   "Too few usable rows (need at least 10).": "Muy pocas filas utilizables (se necesitan al menos 10).",
@@ -472,6 +473,7 @@
   "ready to run": "listo para correr",
   "real vs simulated": "real vs. simulado",
   "remove": "quitar",
+  "resume": "continuar",
   "round": "ronda",
   "run": "correr",
   "run study": "correr estudio",
@@ -523,5 +525,6 @@
   "{n} options real people chose were almost never simulated": "{n} opciones que eligieron personas reales casi nunca aparecieron en la simulación",
   "{n} people · {q} questions · {c} calls": "{n} personas · {q} preguntas · {c} llamadas",
   "{n} real answers added": "{n} respuestas reales agregadas",
+  "{p} of the answers are in; results below use those.": "Ya hay {p} de las respuestas; los resultados de abajo usan esas.",
   "“Spread” is simulated over real spread on scales (below 1 = answers too bunched). “Ranges held” is how often the shown 1-in-5 error range covered the real error (should be about 80%).": "“Dispersión” es la dispersión simulada entre la real en escalas (menos de 1 = respuestas demasiado amontonadas). “Rangos que se cumplieron” es qué tan seguido el rango de error 1 de cada 5 mostrado cubrió el error real (debería ser cerca del 80%)."
 }

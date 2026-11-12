@@ -225,3 +225,35 @@ def test_spa_and_static():
         assert c.get("/static/js/app.js").status_code == 200
         assert c.get("/manifest.webmanifest").json()["name"] == "Zócalo"
         assert c.get("/sw.js").status_code == 200
+
+
+def test_resume_keeps_answers_and_finishes():
+    from zocalo.main import app
+    from zocalo.studies import runner
+    ref = _model_ref()
+    db.set_setting("auth_mode", "none")  # an earlier test turns sign-in on
+    pop = save_population("resume", "US", "demo", demo.build("US", 40, 9), 9, {})
+    with TestClient(app) as c:
+        sid = c.post("/api/studies", json={"name": "r", "kind": "survey", "population_id": pop,
+                                           "questions": [{"text": "Would you buy it?", "options": ["Yes", "No"]}],
+                                           "config": {"models": [ref], "size": 30}}).json()["id"]
+        c.post(f"/api/studies/{sid}/run", json={})
+        for _ in range(200):
+            time.sleep(0.05)
+            if c.get(f"/api/studies/{sid}").json()["status"] != "running":
+                break
+        # simulate a restart that interrupted the run: drop some answers and mark it running
+        ids = [r["id"] for r in db.q("SELECT id FROM answers WHERE study_id=? ORDER BY id", sid)][:20]
+        db.ex(f"DELETE FROM answers WHERE id IN ({','.join('?' * len(ids))})", *ids)
+        db.ex("UPDATE studies SET status='running' WHERE id=?", sid)
+        assert sid in runner.recover_interrupted()
+        before = FakeModel.calls
+        c.post(f"/api/studies/{sid}/run", json={"resume": True})
+        for _ in range(200):
+            time.sleep(0.05)
+            s = c.get(f"/api/studies/{sid}").json()
+            if s["status"] != "running":
+                break
+        assert s["status"] == "done"
+        assert FakeModel.calls - before == 20          # only the missing answers were asked
+        assert db.q1("SELECT COUNT(*) AS n FROM answers WHERE study_id=? AND ok=1", sid)["n"] == 30

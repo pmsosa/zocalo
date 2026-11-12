@@ -70,7 +70,11 @@ async function renderDraft(st, v) {
 async function renderResults(st, v) {
   let res = await POST(`/api/studies/${st.id}/results`, { lang });
   v.append(head(st));
-  if (st.status_msg) v.append(h("div.warn", { style: { marginBottom: "12px" } }, st.status_msg));
+  if (st.status === "stopped" && st.progress < 1) {
+    v.append(h("div.warn.row", { style: { marginBottom: "12px", justifyContent: "space-between" } },
+      h("span", `${st.status_msg || t("This study stopped before it finished.")} ${t("{p} of the answers are in; results below use those.", { p: pct(st.progress) })}`),
+      h("button.btn.small", { onclick: async () => { try { await POST(`/api/studies/${st.id}/run`, { lang, resume: true, confirm: true }); dispatchEvent(new HashChangeEvent("hashchange")); } catch (e) { handle(e); } } }, t("resume"))));
+  } else if (st.status_msg) v.append(h("div.warn", { style: { marginBottom: "12px" } }, st.status_msg));
   if (!res.questions.length || !res.people.length) { v.append(h("div.card.empty", h("h2", t("No answers")), h("p", t("Every call failed. Check the model in Settings, then duplicate and run again.")))); return; }
   let qi = 0, arm = res.questions[0].main_arm, colorBy = "answer", layout = "answer", flt = {}, ansFilter = null;
   const side = h("div.side"), stage = h("div.stage", { style: { height: "min(78vh, 760px)" } });

@@ -110,8 +110,11 @@ async def _answer_one(study, q, person, arm, mref, sem, lang):
         return spent
 
 
-async def run(study_id: int, lang: str = "en") -> None:
+async def run(study_id: int, lang: str = "en", resume: bool = False) -> None:
+    """Run a study. With resume=True, answers already collected are kept and only the missing ones are asked."""
     study = get(study_id)
+    cfg = dict(study["config"], lang=lang)
+    db.ex("UPDATE studies SET config_json=? WHERE id=?", json.dumps(cfg), study_id)
     people, assignment, models = _plan(study)
     if not models:
         db.ex("UPDATE studies SET status='error', status_msg=? WHERE id=?", "No model chosen for this study.", study_id)
@@ -121,13 +124,23 @@ async def run(study_id: int, lang: str = "en") -> None:
     if study["kind"] in ("treatment", "ab"):
         for p in people:
             arm = assignment[p["id"]]
-            p["branch_id"] = new_branch(p["id"], f"study {study_id} · {arm}",
-                                        {"context": [], "study": study_id, "arm": arm})
-    db.ex("DELETE FROM answers WHERE study_id=?", study_id)
-    db.ex("UPDATE studies SET status='running', progress=0, status_msg=NULL, cost_actual=0 WHERE id=?", study_id)
+            name = f"study {study_id} · {arm}"
+            old = db.q1("SELECT id FROM branches WHERE person_id=? AND name=? ORDER BY id DESC LIMIT 1", p["id"], name) if resume else None
+            p["branch_id"] = old["id"] if old else new_branch(p["id"], name, {"context": [], "study": study_id, "arm": arm})
+    if resume:
+        db.ex("DELETE FROM answers WHERE study_id=? AND ok=0", study_id)  # failed answers are asked again
+        have = {(r["question_id"], r["person_id"], r["model_ref"], "within" if r["arm"].startswith("within") else r["arm"])
+                for r in db.q("SELECT question_id, person_id, model_ref, arm FROM answers WHERE study_id=? AND ok=1 "
+                              "AND arm != 'within_before'", study_id)}
+        base_cost = db.q1("SELECT COALESCE(SUM(cost),0) AS c FROM answers WHERE study_id=?", study_id)["c"]
+    else:
+        db.ex("DELETE FROM answers WHERE study_id=?", study_id)
+        have, base_cost = set(), 0.0
+    db.ex("UPDATE studies SET status='running', status_msg=NULL WHERE id=?", study_id)
     sem = asyncio.Semaphore(int(db.get_setting("concurrency", 6)))
-    jobs = [(q, p, assignment[p["id"]], m) for m in models for q in study["questions"] for p in people]
-    total, done, spent = len(jobs), 0, 0.0
+    all_jobs = [(q, p, assignment[p["id"]], m) for m in models for q in study["questions"] for p in people]
+    jobs = [j for j in all_jobs if (j[0]["id"], j[1]["id"], j[3], j[2]) not in have]
+    total, done, spent = len(all_jobs), len(all_jobs) - len(jobs), 0.0
     cap_left = usage.cap_remaining()
     last = time.time()
     tasks = [asyncio.create_task(_answer_one(study, q, p, arm, m, sem, lang)) for q, p, arm, m in jobs]
@@ -142,7 +155,7 @@ async def run(study_id: int, lang: str = "en") -> None:
             _cancel.add(study_id)
         if time.time() - last > 1.0 or done == total:
             last = time.time()
-            db.ex("UPDATE studies SET progress=?, cost_actual=? WHERE id=?", done / max(total, 1), round(spent, 6), study_id)
+            db.ex("UPDATE studies SET progress=?, cost_actual=? WHERE id=?", done / max(total, 1), round(base_cost + spent, 6), study_id)
     failed = db.q1("SELECT COUNT(*) AS n FROM answers WHERE study_id=? AND ok=0", study_id)["n"]
     if study_id in _cancel:
         _cancel.discard(study_id)
@@ -153,21 +166,29 @@ async def run(study_id: int, lang: str = "en") -> None:
         status = "done" if ok else "error"
         msg = (f"{failed} of {failed + ok} answers failed. First error: {first['error']}" if failed else None)
     db.ex("UPDATE studies SET status=?, status_msg=?, progress=?, cost_actual=?, finished_at=? WHERE id=?",
-          status, msg, done / max(total, 1), round(spent, 6), db.now(), study_id)
+          status, msg, done / max(total, 1), round(base_cost + spent, 6), db.now(), study_id)
 
 
-def start(study_id: int, lang: str = "en") -> None:
+def start(study_id: int, lang: str = "en", resume: bool = False) -> None:
     if study_id in _running and not _running[study_id].done():
         return
     _cancel.discard(study_id)
-    _running[study_id] = asyncio.get_event_loop().create_task(run(study_id, lang))
+    _running[study_id] = asyncio.get_event_loop().create_task(run(study_id, lang, resume))
 
 
 def cancel(study_id: int) -> None:
     _cancel.add(study_id)
 
 
-def recover_interrupted() -> None:
-    """After a restart, studies that were running can't continue in-process; mark them so the user can rerun."""
-    db.ex("UPDATE studies SET status='stopped', status_msg='Interrupted by a restart. Run it again to finish.' "
-          "WHERE status='running'")
+def recover_interrupted() -> list[int]:
+    """After a restart, studies that were running pick up where they stopped (answers already collected are kept)."""
+    ids = [r["id"] for r in db.q("SELECT id FROM studies WHERE status='running'")]
+    for sid in ids:
+        db.ex("UPDATE studies SET status_msg='Resumed after a restart.' WHERE id=?", sid)
+    return ids
+
+
+def resume_all(ids: list[int]) -> None:
+    for sid in ids:
+        s = get(sid)
+        start(sid, (s or {}).get("config", {}).get("lang", "en"), resume=True)
