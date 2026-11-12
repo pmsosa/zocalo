@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zócalo</title>
+<meta name="description" content="Simulated survey respondents, with honest error.">
+<meta name="theme-color" content="#efefe4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1c1c1a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/static/icons/favicon.svg" type="image/svg+xml" id="favicon">
+<link rel="icon" href="/static/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/static/icons/favicon-64.png" sizes="64x64" type="image/png">
+<link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/static/css/app.css">
+<script>
+  // Apply theme and display settings before first paint.
+  (function () {
+    var s = {}; try { s = JSON.parse(localStorage.getItem("zocalo-ui") || "{}"); } catch (e) {}
+    var dark = s.theme === "dark" || (s.theme === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    document.documentElement.lang = s.lang || "en";
+  })();
+</script>
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="#/"><img id="brandMark" src="/static/icons/mark-light.svg" alt=""><span>Zócalo</span></a>
+  <nav class="nav" id="nav"></nav>
+  <div class="spacer"></div>
+  <a class="iconbtn" href="#/settings" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></a>
+</header>
+<div id="banners"></div>
+<main id="view"></main>
+<nav class="tabbar" id="tabbar"></nav>
+<div class="tip" id="tip"></div>
+<script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# runtime data (never commit)
+/data/
+/datasets/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+# logo explorations stay local until one is chosen
+/docs/logo-options/
+/mockups/logos/

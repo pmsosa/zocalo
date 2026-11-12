@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zócalo · population (mockup)</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='none' stroke='%23181818' stroke-width='3' stroke-dasharray='1.5 2.6'/><circle cx='16' cy='16' r='7' fill='%235d8cd7'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@300;400;500&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --canvas: #efefe4; --paper: #fcfcf9; --white: #ffffff; --mist: #f3f3f4; --ash: #e3e3e3;
+  --ink: #181818; --lava: #434341; --iron: #666666; --slate: #83837e; --graphite: #909090;
+  --pewter: #a8a8a8; --smoke: #c1c1c0; --stone: #d7d7d6;
+  --blue: #5d8cd7; --wash: #81adec;
+  --display: "Manrope", "Inter Tight", system-ui, sans-serif;
+  --ui: "Inter", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --lift: rgba(0,0,0,.12) 0 4px 10px 0, rgba(0,0,0,.12) 0 2px 4px -1px, rgba(0,0,0,.12) 0 0 4px -1px;
+  --float: rgba(0,0,0,.08) 0 8px 8px -4px, rgba(0,0,0,.08) 0 2px 4px -2px, rgba(0,0,0,.08) 0 1px 1px -1px, rgba(0,0,0,.08) 0 0 0 1px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--canvas); color: var(--ink); font: 400 14px/1.5 var(--ui); letter-spacing: -0.01em; }
+button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
+
+/* top bar */
+.bar { display: flex; align-items: center; gap: 24px; padding: 14px 28px; }
+.mark { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; }
+.mark i { width: 14px; height: 14px; border-radius: 4px; background: var(--blue); display: block; }
+.nav { display: flex; gap: 4px; margin-left: 12px; }
+.nav a { padding: 4px 8px; color: var(--ink); text-decoration: none; }
+.nav a.on { font-weight: 500; }
+.nav a:not(.on) { color: var(--slate); }
+.spacer { flex: 1; }
+.mock { font: 400 11px/1 var(--mono); color: var(--slate); letter-spacing: .015em; border: 1px solid var(--stone); border-radius: 9999px; padding: 5px 10px; }
+.btn { background: var(--ink); color: var(--paper); border: 0; border-radius: 4px; padding: 6px 14px; font-weight: 500; cursor: pointer; }
+.btn:disabled { background: var(--smoke); cursor: default; }
+.ghost { background: none; border: 0; padding: 6px 0; font-weight: 500; cursor: pointer; }
+.ghost::after { content: " →"; }
+
+/* layout */
+.app { display: grid; grid-template-columns: 360px 1fr; gap: 20px; padding: 4px 28px 28px; height: calc(100vh - 58px); }
+.side { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-bottom: 8px; }
+.card { background: var(--paper); border: 1px solid var(--stone); border-radius: 8px; padding: 16px 18px; }
+.eyebrow { font-size: 12px; font-weight: 500; color: var(--graphite); margin-bottom: 6px; }
+.q { font: 400 20px/1.2 var(--display); letter-spacing: -0.02em; margin: 0 0 12px; }
+.q span { color: var(--slate); }
+
+/* results */
+.res { display: grid; gap: 7px; }
+.row { display: grid; grid-template-columns: 70px 1fr 44px; align-items: center; gap: 10px; }
+.row .lab { color: var(--lava); }
+.row .val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+.track { position: relative; height: 10px; background: var(--mist); border-radius: 2px; }
+.fill { position: absolute; inset: 0 auto 0 0; border-radius: 2px; transition: width .6s ease; }
+.err { position: absolute; top: -3px; bottom: -3px; border-left: 1px solid var(--iron); border-right: 1px solid var(--iron); transition: left .6s ease, width .6s ease; }
+.err::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid var(--iron); }
+.errnote { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--stone); display: grid; gap: 4px; }
+.errnote b { font-weight: 500; }
+.errnote .kind { font: 400 11px/1.4 var(--mono); color: var(--slate); letter-spacing: .015em; }
+.warn { font-size: 12px; color: var(--iron); background: var(--mist); border-radius: 4px; padding: 6px 8px; margin-top: 6px; }
+
+/* filters */
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+.chip { border: 1px solid var(--stone); background: var(--paper); border-radius: 9999px; padding: 3px 10px; font-size: 13px; cursor: pointer; color: var(--lava); }
+.chip.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fields label { display: grid; gap: 3px; font-size: 12px; color: var(--iron); }
+.fields .wide { grid-column: span 2; }
+select, input[type=number], textarea { background: var(--white); border: 1px solid var(--stone); border-radius: 4px; padding: 5px 8px; outline: none; }
+select:focus, input:focus, textarea:focus { border-color: var(--slate); }
+.age { display: flex; align-items: center; gap: 6px; }
+.age input { width: 100%; }
+.who { margin: 12px 0 8px; font: 400 16px/1.35 var(--display); }
+.who span { color: var(--slate); }
+textarea { width: 100%; resize: none; height: 52px; line-height: 1.4; }
+.askrow { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.cost { font: 400 11px/1 var(--mono); color: var(--slate); }
+
+/* stage */
+.stage { position: relative; background: var(--paper); border: 1px solid var(--stone); border-radius: 12px; overflow: hidden; min-height: 0; }
+canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+canvas.dragging { cursor: grabbing; }
+.head { position: absolute; left: 28px; top: 24px; pointer-events: none; }
+.head h1 { margin: 0; font: 300 40px/1.02 var(--display); letter-spacing: -0.03em; }
+.head h1 span { color: var(--slate); }
+.tools { position: absolute; right: 20px; top: 20px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.seg { display: inline-flex; background: var(--mist); border: 1px solid var(--stone); border-radius: 6px; padding: 2px; }
+.seg button { border: 0; background: none; padding: 3px 10px; border-radius: 4px; cursor: pointer; color: var(--iron); font-size: 13px; }
+.seg button.on { background: var(--white); color: var(--ink); box-shadow: var(--float); }
+.seg .t { padding: 3px 8px 3px 6px; color: var(--graphite); font-size: 12px; align-self: center; }
+.legend { position: absolute; left: 28px; bottom: 22px; display: flex; gap: 16px; font-size: 12px; color: var(--iron); }
+.legend i { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 1px; }
+.gear { width: 30px; height: 28px; border: 1px solid var(--stone); background: var(--paper); border-radius: 4px; cursor: pointer; display: grid; place-items: center; color: var(--lava); }
+.settings { position: absolute; top: 52px; right: 28px; width: 290px; background: var(--white); border-radius: 8px; box-shadow: var(--float); padding: 14px 16px; display: none; z-index: 7; }
+.settings.on { display: block; }
+.settings h3 { margin: 0 0 10px; font: 500 13px/1 var(--ui); }
+.tog { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-top: 1px solid var(--mist); cursor: pointer; }
+.tog input { margin: 2px 0 0; accent-color: var(--ink); }
+.tog small { display: block; color: var(--iron); font-size: 12px; line-height: 1.35; }
+.bubbles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.bub { position: absolute; max-width: 230px; background: var(--white); border-radius: 8px; box-shadow: var(--float); padding: 8px 11px; font-size: 13px; line-height: 1.35; transform: translate(-50%, calc(-100% - 12px)) scale(.92); opacity: 0; transition: opacity .35s, transform .35s; }
+.bub.on { opacity: 1; transform: translate(-50%, calc(-100% - 12px)) scale(1); }
+.bub::after { content: ""; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; background: var(--white); transform: translateX(-50%) rotate(45deg); box-shadow: rgba(0,0,0,.08) 1px 1px 0 0; }
+.bub em { font-style: normal; display: block; color: var(--slate); font-size: 11px; margin-top: 3px; }
+.bub i { display: inline-block; width: 7px; height: 7px; margin-right: 5px; vertical-align: 1px; border-radius: 1px; }
+@media (max-width: 1320px) {
+  .head { top: 72px; }
+  .head h1 { font-size: 30px; }
+}
+.hint { position: absolute; right: 22px; bottom: 22px; font: 400 11px/1 var(--mono); color: var(--pewter); }
+
+/* tooltip */
+.tip { position: fixed; pointer-events: none; background: var(--white); border-radius: 8px; box-shadow: var(--float); padding: 12px 14px; width: 250px; opacity: 0; transform: translateY(4px); transition: opacity .12s, transform .12s; z-index: 5; }
+.tip.on { opacity: 1; transform: none; }
+.tip .n { font-weight: 600; }
+.tip .m { color: var(--iron); font-size: 12px; margin: 2px 0 8px; }
+.kv { display: grid; grid-template-columns: 74px 1fr; gap: 2px 8px; font-size: 12px; }
+.kv dt { color: var(--graphite); } .kv dd { margin: 0; }
+.spread { display: flex; height: 6px; border-radius: 2px; overflow: hidden; margin: 8px 0 4px; }
+.tip .foot { font: 400 11px/1.3 var(--mono); color: var(--slate); margin-top: 8px; }
+
+/* conversation drawer */
+.drawer { position: fixed; top: 12px; right: 12px; bottom: 12px; width: 400px; background: var(--white); border-radius: 12px; box-shadow: var(--lift); display: flex; flex-direction: column; transform: translateX(440px); transition: transform .3s cubic-bezier(.2,.8,.2,1); z-index: 6; }
+.drawer.on { transform: none; }
+.dh { padding: 18px 20px 14px; border-bottom: 1px solid var(--stone); }
+.dh .top { display: flex; justify-content: space-between; align-items: flex-start; }
+.dh .name { font: 400 24px/1.1 var(--display); letter-spacing: -0.02em; }
+.dh .sub { color: var(--iron); font-size: 13px; margin-top: 3px; }
+.x { border: 0; background: none; font-size: 20px; line-height: 1; cursor: pointer; color: var(--slate); }
+.branch { margin-top: 10px; font: 400 11px/1.5 var(--mono); color: var(--slate); background: var(--mist); border-radius: 4px; padding: 6px 8px; }
+.branch b { color: var(--blue); font-weight: 400; }
+.msgs { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+.msg { max-width: 86%; padding: 9px 12px; border-radius: 8px; line-height: 1.45; }
+.msg.them { background: var(--canvas); align-self: flex-start; }
+.msg.me { background: var(--ink); color: var(--paper); align-self: flex-end; }
+.msg.sys { align-self: center; background: none; color: var(--graphite); font-size: 12px; padding: 2px; }
+.typing { color: var(--graphite); }
+.compose { border-top: 1px solid var(--stone); padding: 12px 14px; display: flex; gap: 8px; }
+.compose input { flex: 1; background: var(--paper); border: 1px solid var(--stone); border-radius: 4px; padding: 7px 10px; outline: none; }
+.dactions { display: flex; gap: 14px; padding: 0 20px 12px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="mark"><i></i>Zócalo</div>
+  <nav class="nav"><a href="#">studies</a><a class="on" href="#">population</a><a href="#">panels</a><a href="#">tests</a></nav>
+  <div class="spacer"></div>
+  <span class="mock">mockup · made-up people and answers</span>
+  <button class="gear" id="gear" aria-label="Settings" title="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+  <button class="btn">new study</button>
+</div>
+
+<div class="app">
+  <aside class="side">
+    <section class="card">
+      <div class="eyebrow" id="qEyebrow">study · everyone · 2,000 people</div>
+      <h2 class="q" id="qText">Would you pay $10 a month <span>for an AI assistant?</span></h2>
+      <div class="res" id="results"></div>
+      <div class="errnote" id="errnote"></div>
+    </section>
+
+    <section class="card">
+      <div class="eyebrow">who to ask</div>
+      <div class="chips" id="chips"></div>
+      <div class="fields">
+        <label>Gender
+          <select id="fGender"><option value="">Anyone</option><option>Woman</option><option>Man</option></select>
+        </label>
+        <label>Voted in 2024
+          <select id="fVote"><option value="">Anyone</option><option>Harris</option><option>Trump</option><option>Other</option><option>Didn't vote</option></select>
+        </label>
+        <label>Age
+          <span class="age"><input id="fAgeMin" type="number" min="18" max="90" value="18"> to <input id="fAgeMax" type="number" min="18" max="90" value="90"></span>
+        </label>
+        <label>State
+          <select id="fState"><option value="">Anywhere</option></select>
+        </label>
+        <label class="wide">Current answer
+          <select id="fAnswer"><option value="">Any answer</option></select>
+        </label>
+      </div>
+      <div class="who" id="who"></div>
+      <textarea id="newQ" placeholder="Ask them something…  e.g. Would you take a four-day week for 10% less pay?"></textarea>
+      <div class="askrow">
+        <span class="cost" id="cost"></span>
+        <button class="btn" id="askBtn">ask them</button>
+      </div>
+    </section>
+  </aside>
+
+  <main class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <div class="bubbles" id="bubbles"></div>
+    <div class="head">
+      <h1>Simulated America.<br><span>2,000 people, built<br>from census records.</span></h1>
+    </div>
+    <div class="tools">
+      <div class="seg" id="layoutSeg"><span class="t">layout</span></div>
+      <div class="seg" id="colorSeg"><span class="t">colour</span></div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="hint" id="hint"></div>
+  </main>
+</div>
+
+<div class="tip" id="tip"></div>
+<div class="settings" id="settings">
+  <h3>Display settings</h3>
+  <label class="tog"><input type="checkbox" id="sCb"><span>Colour-blind friendly colours<small>Strong blue, orange and pink that stay distinct for every common type of colour blindness.</small></span></label>
+  <label class="tog"><input type="checkbox" id="sShapes"><span>Shapes as well as colours<small>Squares, circles, triangles and diamonds, so groups never depend on colour alone.</small></span></label>
+  <label class="tog"><input type="checkbox" id="sBig"><span>Larger dots<small>Easier to see and to hover.</small></span></label>
+</div>
+
+<aside class="drawer" id="drawer">
+  <div class="dh">
+    <div class="top">
+      <div><div class="name" id="dName"></div><div class="sub" id="dSub"></div></div>
+      <button class="x" id="dClose" aria-label="Close">×</button>
+    </div>
+    <div class="branch" id="dBranch"></div>
+  </div>
+  <div class="msgs" id="msgs"></div>
+  <div class="dactions"><button class="ghost" id="dDebate">set against someone</button><button class="ghost" id="dReset">back to base record</button></div>
+  <form class="compose" id="compose"><input id="msgIn" placeholder="Ask a follow-up…" autocomplete="off"><button class="btn">send</button></form>
+</aside>
+
+<script>
+// ---------- made-up population ----------
+let seed = 7;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const pick = (arr, w) => { let r = rnd() * w.reduce((a, b) => a + b, 0); for (let i = 0; i < arr.length; i++) { r -= w[i]; if (r <= 0) return arr[i]; } return arr[arr.length - 1]; };
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+
+const STATES = [["California","West",12],["Texas","South",9],["Florida","South",7],["New York","Northeast",6],["Pennsylvania","Northeast",4],["Illinois","Midwest",4],["Ohio","Midwest",3.5],["Georgia","South",3.3],["North Carolina","South",3.2],["Michigan","Midwest",3],["Arizona","West",2.3],["Washington","West",2.3],["Massachusetts","Northeast",2.1],["Colorado","West",1.8],["Minnesota","Midwest",1.7],["Wisconsin","Midwest",1.8],["Oregon","West",1.3],["Nevada","West",1],["Iowa","Midwest",1],["Maine","Northeast",.4],["Alabama","South",1.5],["Tennessee","South",2.1],["Virginia","South",2.6],["New Jersey","Northeast",2.8]];
+const CITY = {California:["Fresno","San Diego","Oakland","Sacramento"],Texas:["El Paso","Austin","Houston","Lubbock"],Florida:["Tampa","Ocala","Miami"],"New York":["Buffalo","Queens","Albany"],Pennsylvania:["Erie","Pittsburgh","Scranton"],Illinois:["Peoria","Chicago"],Ohio:["Dayton","Toledo"],Georgia:["Macon","Savannah"],"North Carolina":["Durham","Asheville"],Michigan:["Flint","Grand Rapids"],Arizona:["Tucson","Mesa"],Washington:["Spokane","Tacoma"],Massachusetts:["Worcester","Lowell"],Colorado:["Pueblo","Boulder"],Minnesota:["Duluth","St. Paul"],Wisconsin:["Green Bay","Madison"],Oregon:["Salem","Bend"],Nevada:["Reno","Henderson"],Iowa:["Ames","Davenport"],Maine:["Bangor"],Alabama:["Mobile","Huntsville"],Tennessee:["Knoxville","Memphis"],Virginia:["Roanoke","Norfolk"],"New Jersey":["Newark","Trenton"]};
+const FW = ["Maria","Linda","Aisha","Jennifer","Rosa","Emily","Keisha","Hannah","Priya","Donna","Megan","Lupe","Grace","Tanya","Ruth","Sofia","Brittany","Mei","Carol","Dana"];
+const MW = ["James","Luis","Robert","Darnell","Kevin","Tyler","Jose","Michael","Raj","Gary","Brandon","Wei","Dennis","Marcus","Cody","Ahmed","Frank","Diego","Paul","Ethan"];
+const LN = ["Garcia","Smith","Nguyen","Johnson","Patel","Brown","Martinez","Williams","Kim","Davis","Lopez","Miller","Okafor","Wilson","Rivera","Anderson","Chen","Thomas","Hernandez","Moore","Jackson","Clark","Novak","Reyes"];
+const JOBS = ["nurse","truck driver","retired teacher","software developer","cashier","electrician","student","accountant","home health aide","farmer","line cook","sales manager","mechanic","pharmacist","stay-at-home parent","warehouse worker","real estate agent","police officer","graphic designer","retired machinist","dental hygienist","small business owner"];
+
+const N = 2000;
+const people = [];
+for (let i = 0; i < N; i++) {
+  const g = rnd() < 0.51 ? "Woman" : "Man";
+  const age = Math.round(clamp(18 + Math.pow(rnd(), 1.15) * 72, 18, 90));
+  const st = pick(STATES, STATES.map(s => s[2]));
+  const lean = (st[1] === "South" ? .12 : st[1] === "West" || st[1] === "Northeast" ? -.1 : 0) + (g === "Man" ? .07 : -.07) + (age > 55 ? .05 : -.04);
+  const voted = rnd() < (0.45 + age / 200);
+  const vote = !voted ? "Didn't vote" : rnd() < .03 ? "Other" : rnd() < .5 + lean ? "Trump" : "Harris";
+  let job = JOBS[Math.floor(rnd() * JOBS.length)];
+  if (age < 23 && rnd() < .6) job = "student";
+  if (age > 67) job = rnd() < .7 ? "retired " + ["teacher","machinist","nurse","postal worker","accountant"][Math.floor(rnd() * 5)] : job;
+  people.push({
+    id: i, gender: g, age, state: st[0], region: st[1], vote, job,
+    city: CITY[st[0]][Math.floor(rnd() * CITY[st[0]].length)],
+    name: (g === "Woman" ? FW : MW)[Math.floor(rnd() * 20)] + " " + LN[Math.floor(rnd() * LN.length)],
+    acs: 100000 + Math.floor(rnd() * 899999),
+    r: rnd(), r2: rnd(), r3: rnd()
+  });
+}
+
+// ---------- questions (mock answering) ----------
+const OPTS = ["Yes", "No", "Not sure"];
+function hashStr(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; }
+function answerAll(q, ageW, voteW) {
+  const b = hashStr(q);
+  for (const p of people) {
+    let y = .42 + (b - .5) * .45 + ageW * (40 - p.age) / 100 + (p.vote === "Harris" ? voteW : p.vote === "Trump" ? -voteW : 0) + (p.r - .5) * .55;
+    y = clamp(y, .03, .92);
+    const u = clamp(.08 + p.r2 * .22, .05, .3);
+    const n = clamp(1 - y - u, .02, 1);
+    const s = y + u + n;
+    p.spread = [y / s, n / s, u / s];
+    // the dot shows one answer drawn from the person's stated spread, so dots match the totals
+    p.answer = p.r3 < p.spread[0] ? 0 : p.r3 < p.spread[0] + p.spread[1] ? 1 : 2;
+  }
+}
+let study = { q: "Would you pay $10 a month for an AI assistant?", group: "everyone", kind: "per", typ: 6, p80: 14, why: "consumer · evergreen · 3 close real polls (Pew 2024–26)" };
+answerAll(study.q, .35, .06);
+
+// ---------- filters ----------
+const F = { gender: "", vote: "", state: "", answer: "", ageMin: 18, ageMax: 90 };
+const CHIPS = [
+  ["Everyone", {}], ["Women", { gender: "Woman" }], ["Men under 35", { gender: "Man", ageMax: 34 }],
+  ["Over 65", { ageMin: 65 }], ["California", { state: "California" }], ["Voted Harris", { vote: "Harris" }],
+  ["Voted Trump", { vote: "Trump" }], ["Didn't vote", { vote: "Didn't vote" }], ["Said no", { answer: "1" }]
+];
+const match = p => (!F.gender || p.gender === F.gender) && (!F.vote || p.vote === F.vote) && (!F.state || p.state === F.state)
+  && (F.answer === "" || p.answer === +F.answer) && p.age >= F.ageMin && p.age <= F.ageMax;
+const $ = id => document.getElementById(id);
+const fmt = n => n.toLocaleString("en-US");
+
+for (const s of [...STATES].sort((a, b) => a[0].localeCompare(b[0]))) $("fState").add(new Option(s[0]));
+OPTS.forEach((o, i) => $("fAnswer").add(new Option("Said " + o.toLowerCase(), i)));
+
+function describe() {
+  const bits = [];
+  if (F.gender) bits.push(F.gender === "Woman" ? "women" : "men");
+  if (F.ageMin > 18 && F.ageMax < 90) bits.push(`aged ${F.ageMin}–${F.ageMax}`);
+  else if (F.ageMin > 18) bits.push(`${F.ageMin} and over`);
+  else if (F.ageMax < 90) bits.push(`under ${F.ageMax + 1}`);
+  if (F.state) bits.push("in " + F.state);
+  if (F.vote) bits.push(F.vote === "Didn't vote" ? "who didn't vote in 2024" : `who voted ${F.vote}`);
+  if (F.answer !== "") bits.push(`who said “${OPTS[+F.answer].toLowerCase()}”`);
+  if (!bits.length) return "Everyone";
+  let s = bits.join(" ");
+  if (!F.gender) s = "People " + s;
+  return s[0].toUpperCase() + s.slice(1);
+}
+function syncFields() {
+  $("fGender").value = F.gender; $("fVote").value = F.vote; $("fState").value = F.state; $("fAnswer").value = F.answer;
+  $("fAgeMin").value = F.ageMin; $("fAgeMax").value = F.ageMax;
+}
+function applyFilters() {
+  const sel = people.filter(match);
+  $("who").innerHTML = `${describe()} <span>· ${fmt(sel.length)} people</span>`;
+  $("askBtn").disabled = !sel.length;
+  $("cost").textContent = `≈ ${fmt(sel.length)} calls · ~$${(sel.length * .0018).toFixed(2)}`;
+  document.querySelectorAll(".chip").forEach(c => {
+    const f = Object.assign({ gender: "", vote: "", state: "", answer: "", ageMin: 18, ageMax: 90 }, CHIPS[+c.dataset.i][1]);
+    c.classList.toggle("on", Object.keys(f).every(k => String(f[k]) === String(F[k])));
+  });
+  for (const p of people) p.inSel = match(p);
+  renderResults();
+}
+CHIPS.forEach(([label], i) => {
+  const b = document.createElement("button"); b.className = "chip"; b.textContent = label; b.dataset.i = i;
+  b.onclick = () => { Object.assign(F, { gender: "", vote: "", state: "", answer: "", ageMin: 18, ageMax: 90 }, CHIPS[i][1]); syncFields(); applyFilters(); };
+  $("chips").append(b);
+});
+for (const [id, key] of [["fGender","gender"],["fVote","vote"],["fState","state"],["fAnswer","answer"]]) $(id).onchange = e => { F[key] = e.target.value; applyFilters(); };
+$("fAgeMin").oninput = e => { F.ageMin = clamp(+e.target.value || 18, 18, 90); applyFilters(); };
+$("fAgeMax").oninput = e => { F.ageMax = clamp(+e.target.value || 90, 18, 90); applyFilters(); };
+
+// ---------- colours ----------
+// Default: the quiet house palette. Colour-blind mode: Okabe–Ito hues, distinct for protan, deutan and tritan vision.
+const PAL = {
+  base: { ans: ["#5d8cd7", "#2b2b29", "#b9b9b2"], vote: { Harris: "#5d8cd7", Trump: "#b8735c", Other: "#8fb59a", "Didn't vote": "#c4c4bd" } },
+  cb:   { ans: ["#0072B2", "#D55E00", "#CC79A7"], vote: { Harris: "#0072B2", Trump: "#D55E00", Other: "#009E73", "Didn't vote": "#8a8a8a" } }
+};
+const SET = Object.assign({ cb: false, shapes: false, big: false }, JSON.parse(localStorage.getItem("zocalo-settings") || "{}"));
+let ANS_COL = PAL.base.ans, VOTE_COL = PAL.base.vote;
+function applyPalette() { const P = SET.cb ? PAL.cb : PAL.base; ANS_COL = P.ans; VOTE_COL = P.vote; }
+applyPalette();
+const VOTE = ["Harris", "Trump", "Other", "Didn't vote"];
+let colorBy = "answer";
+const colOf = p => colorBy === "answer" ? ANS_COL[p.answer] : VOTE_COL[p.vote];
+const shapeOf = p => colorBy === "answer" ? p.answer : VOTE.indexOf(p.vote);
+function dot(c, k, x, y, s) {
+  if (!SET.shapes || k === 0) { c.fillRect(x - s / 2, y - s / 2, s, s); return; }
+  c.beginPath();
+  if (k === 1) c.arc(x, y, s * .58, 0, 7);
+  else if (k === 2) { const h = s * .7; c.moveTo(x, y - h); c.lineTo(x + h, y + h * .8); c.lineTo(x - h, y + h * .8); }
+  else { const h = s * .72; c.moveTo(x, y - h); c.lineTo(x + h, y); c.lineTo(x, y + h); c.lineTo(x - h, y); }
+  c.fill();
+}
+function swatch(col, k) {
+  const shapes = ['<rect x="1" y="1" width="8" height="8"/>', '<circle cx="5" cy="5" r="4.4"/>', '<path d="M5 .5 9.5 9H.5z"/>', '<path d="M5 0 10 5 5 10 0 5z"/>'];
+  return `<svg width="10" height="10" viewBox="0 0 10 10" style="margin-right:6px;vertical-align:-1px" fill="${col}">${SET.shapes ? shapes[k] : shapes[0]}</svg>`;
+}
+
+// ---------- results card ----------
+function renderResults() {
+  const sel = people.filter(p => p.inSel);
+  const n = sel.length || 1;
+  const mean = [0, 0, 0];
+  for (const p of sel) p.spread.forEach((v, i) => mean[i] += v / n);
+  const sub = sel.length < N;
+  const typ = study.kind === "per" ? study.typ + (sub ? Math.round(9 * Math.sqrt(300 / Math.max(sel.length, 30)) * .6) : 0) : 12 + (sub ? 4 : 0);
+  $("qEyebrow").textContent = `study · ${sub ? describe().toLowerCase() : study.group} · ${fmt(sel.length)} people`;
+  $("results").innerHTML = OPTS.map((o, i) => {
+    const v = mean[i] * 100, lo = clamp(v - typ, 0, 100), hi = clamp(v + typ, 0, 100);
+    return `<div class="row"><span class="lab">${o}</span><div class="track"><div class="fill" style="width:${v}%;background:${ANS_COL[i]}"></div><div class="err" style="left:${lo}%;width:${hi - lo}%"></div></div><span class="val">${Math.round(v)}%</span></div>`;
+  }).join("");
+  const kind = study.kind === "per"
+    ? `<b>Usually within ±${typ} pts</b><span>1 in 5 times more than ±${study.p80 + (sub ? 6 : 0)} pts</span><span class="kind">per-question estimate · ${study.why}</span>`
+    : `<b>Flat error: ±${typ} pts</b><span>No tested question type matches this one well, so this is the overall error across all tests.</span><span class="kind">flat estimate · not specific to this question</span>`;
+  $("errnote").innerHTML = kind
+    + (sub && sel.length < 400 ? `<div class="warn">Small subgroup (${fmt(sel.length)}): simulated subgroups tend to look more alike than real ones. Treat as directional.</div>` : "")
+    + `<span class="kind">bars: typical error · totals: mean of each person's stated spread</span>`;
+}
+
+// ---------- canvas: sphere and split layouts ----------
+const cv = $("cv"), ctx = cv.getContext("2d");
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  const r = cv.getBoundingClientRect(); DPR = window.devicePixelRatio || 1;
+  W = r.width; H = r.height; cv.width = W * DPR; cv.height = H * DPR; ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  computeTargets();
+}
+// Fibonacci sphere, people shuffled across it
+const order = people.map((p, i) => i).sort(() => rnd() - .5);
+const GA = Math.PI * (3 - Math.sqrt(5));
+order.forEach((pi, k) => {
+  const y = 1 - (k + .5) / N * 2, rad = Math.sqrt(1 - y * y), th = k * GA;
+  Object.assign(people[pi], { sx: Math.cos(th) * rad, sy: y, sz: Math.sin(th) * rad, x: 0, y: 0, mix: 0 });
+});
+
+let layout = "answer", groups = [], tMix = 0, splitGap = 99;   // starts as a sphere and settles into the split: a short intro
+const LAYOUTS = { answer: "answer", vote: "2024 vote", gender: "gender", age: "age", region: "region", sphere: "explore ✦" };
+const ageBand = a => a < 35 ? "18–34" : a < 55 ? "35–54" : a < 65 ? "55–64" : "65+";
+const keyOf = (p, l) => l === "answer" ? OPTS[p.answer] : l === "vote" ? p.vote : l === "gender" ? (p.gender === "Woman" ? "Women" : "Men") : l === "age" ? ageBand(p.age) : p.region;
+const KEYS = { answer: OPTS, vote: VOTE, gender: ["Women", "Men"], age: ["18–34", "35–54", "55–64", "65+"], region: ["West", "Midwest", "South", "Northeast"] };
+
+function computeTargets() {
+  if (layout === "sphere") return;
+  const keys = KEYS[layout];
+  const buckets = keys.map(k => people.filter(p => keyOf(p, layout) === k).sort((a, b) => a.answer - b.answer || a.r - b.r));
+  const max = Math.max(...buckets.map(b => b.length));
+  const slot = (W - 120) / keys.length, cy = H * .56;
+  const rMax = Math.min(slot * .46, H * .34);
+  // Groups are scaled by area, so every group has the same dot spacing. Cap dot size to leave a clear gap.
+  splitGap = .9 * rMax * Math.sqrt(Math.PI / max);
+  groups = keys.map((k, gi) => {
+    const b = buckets[gi], cx = 60 + slot * (gi + .5), R = rMax * Math.sqrt(b.length / max);
+    b.forEach((p, i) => { const rr = R * Math.sqrt((i + .5) / b.length), th = i * GA; p.gx = cx + Math.cos(th) * rr; p.gy = cy + Math.sin(th) * rr; });
+    return { k, cx, cy, R, n: b.length };
+  });
+}
+
+let rotY = 0, rotX = -0.32, spin = 0.0016, hover = null, drag = null;
+function frame() {
+  if (!drag && layout === "sphere") rotY += spin;
+  tMix += ((layout === "sphere" ? 0 : 1) - tMix) * .08;
+  const R = Math.min(W, H) * .36, cx = W * .58, cy = H * .54, f = 3.2;
+  const cy1 = Math.cos(rotY), sy1 = Math.sin(rotY), cx1 = Math.cos(rotX), sx1 = Math.sin(rotX);
+  ctx.clearRect(0, 0, W, H);
+  for (const p of people) {
+    let x = p.sx * cy1 + p.sz * sy1, z = -p.sx * sy1 + p.sz * cy1, y = p.sy;
+    const y2 = y * cx1 - z * sx1; z = y * sx1 + z * cx1;
+    const s = f / (f - z);
+    const px = cx + x * R * s, py = cy + y2 * R * s;
+    const e = tMix * tMix * (3 - 2 * tMix);
+    p.x = layout === "sphere" && tMix < .001 ? px : px + ((p.gx ?? px) - px) * e;
+    p.y = layout === "sphere" && tMix < .001 ? py : py + ((p.gy ?? py) - py) * e;
+    p.z = z * (1 - e) + e;
+  }
+  people.sort((a, b) => a.z - b.z);
+  const E = tMix * tMix * (3 - 2 * tMix);
+  const anySel = people.some(p => !p.inSel);
+  for (const p of people) {
+    const depth = (p.z + 1) / 2;
+    let a = .18 + depth * .82;
+    if (anySel && !p.inSel) a *= .13;
+    let size = (1.6 + depth * 1.5) * (SET.big ? 1.7 : 1) * (SET.shapes ? 1.25 : 1);
+    if (layout !== "sphere") size += (Math.min(size, splitGap * (SET.shapes ? .58 : .62)) - size) * E;
+    if (p === hover) size *= 2.2;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = colOf(p);
+    dot(ctx, shapeOf(p), p.x, p.y, size);
+  }
+  ctx.globalAlpha = 1;
+  moveBubbles();
+  if (hover) { ctx.strokeStyle = "#181818"; ctx.lineWidth = 1; ctx.strokeRect(hover.x - 5, hover.y - 5, 10, 10); }
+  if (tMix > .5) {
+    ctx.globalAlpha = (tMix - .5) * 2;
+    for (const g of groups) {
+      const inG = people.filter(p => keyOf(p, layout) === g.k);
+      const shown = anySel ? inG.filter(p => p.inSel).length : inG.length;
+      ctx.textAlign = "center"; ctx.fillStyle = "#181818"; ctx.font = "500 13px Inter, system-ui";
+      ctx.fillText(g.k, g.cx, g.cy + Math.max(g.R, 20) + 26);
+      ctx.fillStyle = "#83837e"; ctx.font = "400 12px Inter, system-ui";
+      const scope = anySel ? people.filter(p => p.inSel).length : N;
+      const yes = inG.filter(p => (!anySel || p.inSel)).reduce((s, p) => s + p.spread[0], 0) / Math.max(shown, 1);
+      ctx.fillText(layout === "answer" ? `${fmt(shown)} people · ${Math.round(shown / Math.max(scope, 1) * 100)}%`
+        : shown ? `${fmt(shown)} people · ${Math.round(yes * 100)}% yes` : "not in this selection", g.cx, g.cy + Math.max(g.R, 20) + 44);
+    }
+    ctx.globalAlpha = 1;
+  }
+  requestAnimationFrame(frame);
+}
+
+// ---------- tooltip and hover ----------
+const tip = $("tip");
+function showTip(p, mx, my) {
+  const sp = p.spread.map((v, i) => `<i style="width:${v * 100}%;background:${ANS_COL[i]}"></i>`).join("");
+  tip.innerHTML = `<div class="n">${p.name}</div><div class="m">${p.age} · ${p.job} · ${p.city}, ${p.state}</div>
+    <dl class="kv"><dt>2024 vote</dt><dd>${p.vote}</dd><dt>Answer</dt><dd><b style="font-weight:500">${OPTS[p.answer]}</b></dd></dl>
+    <div class="spread">${sp}</div>
+    <div class="kv" style="color:var(--iron)">${p.spread.map((v, i) => `<span>${OPTS[i]}</span><span>${Math.round(v * 100)}%</span>`).join("")}</div>
+    <div class="foot">census record ACS-${p.acs} · click to talk</div>`;
+  tip.style.left = Math.min(mx + 16, innerWidth - 270) + "px";
+  tip.style.top = Math.min(my + 16, innerHeight - 230) + "px";
+  tip.classList.add("on");
+}
+function nearest(mx, my) {
+  let best = null, bd = 64;
+  const anySel = people.some(q => !q.inSel);
+  for (let i = people.length - 1; i >= 0; i--) {
+    const p = people[i]; if (p.z < -.15 && tMix < .5) continue;
+    const d = (p.x - mx) ** 2 + (p.y - my) ** 2;
+    if (d < bd && (p.inSel || !anySel)) { bd = d; best = p; }
+  }
+  return best;
+}
+cv.addEventListener("mousemove", e => {
+  const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  if (drag) {
+    if (layout === "sphere") { rotY += (mx - drag.x) * .006; rotX = clamp(rotX + (my - drag.y) * .006, -1.3, 1.3); }
+    drag.moved += Math.abs(mx - drag.x) + Math.abs(my - drag.y); drag.x = mx; drag.y = my; return;
+  }
+  hover = nearest(mx, my);
+  spin = hover ? 0 : .0016;
+  if (hover) showTip(hover, e.clientX, e.clientY); else tip.classList.remove("on");
+});
+cv.addEventListener("mouseleave", () => { hover = null; spin = .0016; tip.classList.remove("on"); });
+cv.addEventListener("mousedown", e => { const r = cv.getBoundingClientRect(); drag = { x: e.clientX - r.left, y: e.clientY - r.top, moved: 0 }; cv.classList.add("dragging"); tip.classList.remove("on"); });
+addEventListener("mouseup", () => {
+  if (drag && drag.moved < 4 && hover) openChat(hover);
+  drag = null; cv.classList.remove("dragging");
+});
+
+// ---------- segmented controls ----------
+function seg(id, items, get, set) {
+  const el = $(id);
+  for (const [k, label] of Object.entries(items)) {
+    const b = document.createElement("button"); b.textContent = label; b.dataset.k = k;
+    b.onclick = () => { set(k); el.querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.k === get())); };
+    el.append(b);
+  }
+  el.querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.k === get()));
+}
+seg("layoutSeg", LAYOUTS, () => layout, k => { layout = k; computeTargets(); hintText(); if (k !== "sphere") clearBubbles(); });
+function hintText() { $("hint").textContent = layout === "sphere" ? "answers pop up as it turns · drag to turn · click to talk" : "hover a dot · click to talk"; }
+seg("colorSeg", { answer: "answer", vote: "2024 vote" }, () => colorBy, k => { colorBy = k; legend(); });
+function legend() {
+  const items = colorBy === "answer" ? OPTS.map((o, i) => [o, ANS_COL[i]]) : VOTE.map(v => [v, VOTE_COL[v]]);
+  $("legend").innerHTML = items.map(([l, c], k) => `<span>${swatch(c, k)}${l}</span>`).join("");
+}
+
+// ---------- asking a new question ----------
+$("askBtn").onclick = () => {
+  const q = $("newQ").value.trim(); if (!q) { $("newQ").focus(); return; }
+  const h = hashStr(q);
+  answerAll(q, (h - .5) * .9, (hashStr(q + "v") - .5) * .5);
+  const known = h > .45;
+  study = known
+    ? { q, group: describe().toLowerCase(), kind: "per", typ: 5 + Math.round(h * 6), p80: 12 + Math.round(h * 6), why: "opinion · evergreen · 2 close real polls (GSS 2024, CES 2025)" }
+    : { q, group: describe().toLowerCase(), kind: "flat" };
+  const words = q.split(" "), cut = Math.ceil(words.length * .55);
+  $("qText").innerHTML = `${words.slice(0, cut).join(" ")} <span>${words.slice(cut).join(" ")}</span>`;
+  if (F.answer !== "") { F.answer = ""; syncFields(); }
+  applyFilters(); computeTargets();
+};
+
+// ---------- conversation ----------
+let chatWith = null;
+function say(cls, text) { const m = document.createElement("div"); m.className = "msg " + cls; m.textContent = text; $("msgs").append(m); $("msgs").scrollTop = 1e9; return m; }
+function reply(text) {
+  const t = say("them typing", "…");
+  setTimeout(() => { t.classList.remove("typing"); t.textContent = text; $("msgs").scrollTop = 1e9; }, 650 + text.length * 6);
+}
+function openChat(p) {
+  chatWith = p; p.turns = 0;
+  $("dName").textContent = p.name;
+  $("dSub").textContent = `${p.age} · ${p.job} · ${p.city}, ${p.state} · voted ${p.vote === "Didn't vote" ? "— didn't vote" : p.vote}`;
+  $("dBranch").innerHTML = `base record <b>ACS-${p.acs}</b> (unchanged)<br>branch <b>interview-1</b> · model pinned · traits restated each turn`;
+  $("msgs").innerHTML = "";
+  say("sys", `You asked: “${study.q}”`);
+  const a = OPTS[p.answer].toLowerCase(), pct = Math.round(p.spread[p.answer] * 100);
+  const lines = {
+    yes: `Probably yes. I'd say ${pct}% likely. As a ${p.job}, anything that saves me time adds up, and $10 isn't much.`,
+    no: `Probably not. Maybe ${100 - pct}% I'd go for it. Money's tight in ${p.city} and I don't see what it would do for me day to day.`,
+    "not sure": `Honestly, I'm not sure. Depends what it actually does. I'd want to try it first before paying anything.`
+  };
+  reply(lines[a] || `My answer was “${OPTS[p.answer]}”. Ask me why.`);
+  $("drawer").classList.add("on");
+}
+const FOLLOW = [
+  p => `That's fair to ask. I'm ${p.age}, so I've seen a lot of these things come and go. I'd need a real reason.`,
+  p => `If a friend I trust used it, that would change things. Ads wouldn't. Not around here in ${p.city}.`,
+  p => `Look, I'm not against it. It's just one more monthly bill, and as a ${p.job} I already have plenty of those.`,
+  p => `Maybe at $5. At $10 I'd think twice. At $20, no.`
+];
+$("compose").onsubmit = e => {
+  e.preventDefault(); const t = $("msgIn").value.trim(); if (!t || !chatWith) return;
+  say("me", t); $("msgIn").value = "";
+  reply(FOLLOW[chatWith.turns++ % FOLLOW.length](chatWith));
+};
+$("dClose").onclick = () => $("drawer").classList.remove("on");
+$("dReset").onclick = () => chatWith && openChat(chatWith);
+$("dDebate").onclick = () => {
+  if (!chatWith) return;
+  const other = people.find(q => q.answer !== chatWith.answer && q.vote !== chatWith.vote && q.vote !== "Didn't vote");
+  say("sys", `Debate with ${other.name} (${other.age}, ${other.city}), who said “${OPTS[other.answer].toLowerCase()}”. Stances pinned; a no-discussion branch runs alongside for comparison.`);
+};
+addEventListener("keydown", e => { if (e.key === "Escape") $("drawer").classList.remove("on"); });
+
+// ---------- settings ----------
+$("gear").onclick = e => { e.stopPropagation(); $("settings").classList.toggle("on"); };
+addEventListener("click", e => { if (!$("settings").contains(e.target) && e.target !== $("gear")) $("settings").classList.remove("on"); });
+for (const [id, key] of [["sCb", "cb"], ["sShapes", "shapes"], ["sBig", "big"]]) {
+  $(id).checked = SET[key];
+  $(id).onchange = e => { SET[key] = e.target.checked; localStorage.setItem("zocalo-settings", JSON.stringify(SET)); applyPalette(); legend(); renderResults(); };
+}
+
+// ---------- explore mode: answers pop up while the sphere turns ----------
+const QUOTES = [
+  ["Honestly, yes. I'd give it a go.", "If it saves me time, sure.", "Yes, as long as I can cancel any time.", "Probably. My kids would use it more than me."],
+  ["Not at that price.", "No. I don't see what it'd do for me.", "Money's tight. That's a no.", "I'd rather not, to be honest."],
+  ["Depends what it actually does.", "I'd want to try it first.", "Hard to say. Ask me next month.", "Maybe? I really don't know."]
+];
+let bubbles = [];
+function clearBubbles() { bubbles.forEach(b => b.el.remove()); bubbles = []; }
+function popBubble() {
+  if (layout !== "sphere" || tMix > .05 || drag || hover || document.hidden) return;
+  const pool = people.filter(p => p.z > .55 && p.inSel && !bubbles.some(b => b.p === p));
+  if (!pool.length) return;
+  const p = pool[Math.floor(Math.random() * pool.length)];
+  const el = document.createElement("div"); el.className = "bub";
+  const q = QUOTES[p.answer][Math.floor(Math.random() * 4)];
+  el.innerHTML = `“${q}”<em>${swatch(ANS_COL[p.answer], p.answer)}${p.name.split(" ")[0]}, ${p.age} · ${p.city}</em>`;
+  $("bubbles").append(el);
+  const b = { p, el, born: performance.now() }; bubbles.push(b);
+  requestAnimationFrame(() => el.classList.add("on"));
+  setTimeout(() => el.classList.remove("on"), 3600);
+  setTimeout(() => { el.remove(); bubbles = bubbles.filter(x => x !== b); }, 4000);
+}
+function moveBubbles() { for (const b of bubbles) { b.el.style.left = b.p.x + "px"; b.el.style.top = b.p.y + "px"; } }
+setInterval(popBubble, 1400);
+
+// ---------- go ----------
+addEventListener("resize", resize);
+resize(); legend(); hintText(); applyFilters(); frame();
+</script>
+</body>
+</html>
