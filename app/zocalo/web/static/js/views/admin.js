@@ -212,7 +212,8 @@ export async function renderTests(_, v) {
             h("td.num", r.metrics.spread_ratio ?? "—"), h("td.num", r.metrics.coverage_p80 != null ? pct(r.metrics.coverage_p80) : "—"), h("td.num", money(r.metrics.cost))]
             : h("td", { colspan: 8 }, statusTag(r.status), r.status === "running" ? progressBar(r.progress) : null, h("span.small.faint", " " + (r.status_msg || ""))),
           h("td.small.faint", when(r.created_at))))))),
-      h("p.small.faint", t("“Spread” is simulated over real spread on scales (below 1 = answers too bunched). “Ranges held” is how often the shown 1-in-5 error range covered the real error (should be about 80%)."))));
+      h("p.small.faint", t("“Spread” is simulated over real spread on scales (below 1 = answers too bunched). “Ranges held” is how often the shown 1-in-5 error range covered the real error (should be about 80%).")),
+      h("p.small.faint", t("The no-AI “similar respondents” baseline sees other respondents' real answers to the same question, so its overall error is a ceiling for questions that have already been asked, not a fair rival. Compare its individual accuracy instead."))));
     if (d.runs.some(r => r.status === "running" || r.status === "queued")) { const tm = setTimeout(() => location.hash === "#/tests" && dispatchEvent(new HashChangeEvent("hashchange")), 3000); onCleanup(() => clearTimeout(tm)); }
   }
 }

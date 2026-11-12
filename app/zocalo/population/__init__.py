@@ -20,12 +20,12 @@ FIELDS = ["country", "region", "age", "sex", "education", "income", "employment"
 
 FIELD_LABELS = {
     "en": {"country": "Country", "region": "Region", "age": "Age", "sex": "Sex", "education": "Education",
-           "income": "Household income", "employment": "Work", "occupation": "Occupation", "race": "Race/ethnicity",
+           "income": "Income", "employment": "Work", "occupation": "Occupation", "race": "Race/ethnicity",
            "marital": "Marital status", "urban": "Lives in", "household": "Household", "religion": "Religion",
            "religiosity": "Religious practice", "party": "Party", "ideology": "Political views",
            "vote_last": "Last vote"},
     "es": {"country": "País", "region": "Región", "age": "Edad", "sex": "Sexo", "education": "Estudios",
-           "income": "Ingreso del hogar", "employment": "Trabajo", "occupation": "Ocupación", "race": "Raza/etnia",
+           "income": "Ingresos", "employment": "Trabajo", "occupation": "Ocupación", "race": "Raza/etnia",
            "marital": "Estado civil", "urban": "Vive en", "household": "Hogar", "religion": "Religión",
            "religiosity": "Práctica religiosa", "party": "Partido", "ideology": "Ideas políticas",
            "vote_last": "Último voto"},
@@ -76,7 +76,9 @@ def profile_text(rec: dict) -> str:
     lines = []
     if rec.get("age") is not None:
         lines.append(f"Age: {rec['age']}")
-    for k in ["sex", "country", "region", "urban", "education", "employment", "occupation", "income", "household",
+    if rec.get("country_name") or rec.get("country"):
+        lines.append(f"Country: {rec.get('country_name') or rec['country']}")
+    for k in ["sex", "region", "urban", "education", "employment", "occupation", "income", "household",
               "marital", "race", "religion", "religiosity", "party", "ideology", "vote_last"]:
         v = rec.get(k)
         if v not in (None, "", "unknown"):
@@ -129,7 +131,15 @@ NAMES = {
            ["Haruto", "Ren", "Sota", "Yuto", "Takashi", "Kenji", "Daiki", "Hiroshi", "Kaito", "Shota"],
            ["Sato", "Suzuki", "Takahashi", "Tanaka", "Watanabe", "Ito", "Yamamoto", "Nakamura", "Kobayashi", "Kato"]),
 }
-COUNTRY_NAME_LANG = {"MX": "es", "ES": "es", "AR": "es", "CO": "es", "CL": "es", "PE": "es", "BR": "pt", "PT": "pt",
+NAMES["af"] = (["Amina", "Chiamaka", "Fatou", "Grace", "Wanjiru", "Aisha", "Nomvula", "Esi", "Halima", "Ngozi", "Akosua", "Zainab"],
+               ["Kwame", "Chinedu", "Ibrahim", "Tunde", "Kofi", "Musa", "Thabo", "Emeka", "Jabari", "Yusuf", "Kagiso", "Moussa"],
+               ["Okafor", "Mensah", "Diallo", "Abubakar", "Mwangi", "Nkosi", "Traoré", "Adeyemi", "Banda", "Osei", "Kamau", "Sow"])
+NAMES["ar"] = (["Fatima", "Mariam", "Noor", "Layla", "Aya", "Huda", "Rania", "Salma", "Yasmin", "Amal"],
+               ["Ahmed", "Mohamed", "Omar", "Youssef", "Ali", "Khaled", "Hassan", "Karim", "Tarek", "Samir"],
+               ["Haddad", "Mansour", "Khalil", "Nasser", "Saleh", "Aziz", "Hamdan", "Farouk", "Rahman", "Said"])
+_AF = "AO BJ BW BF BI CV CM CI CG CD ET GA GM GH GN KE LS LR MG MW ML MR MU MZ NA NE NG RW ST SN SC SL ZA SS SD SZ TZ TG UG ZM ZW"
+_AR = "EG IQ JO LB LY MA PS SY TN DZ SA KW QA AE YE"
+COUNTRY_NAME_LANG = {**{c: "af" for c in _AF.split()}, **{c: "ar" for c in _AR.split()}, "MX": "es", "ES": "es", "AR": "es", "BO": "es", "EC": "es", "GT": "es", "HN": "es", "NI": "es", "PA": "es", "PY": "es", "SV": "es", "UY": "es", "VE": "es", "DO": "es", "CR": "es", "CO": "es", "CL": "es", "PE": "es", "BR": "pt", "PT": "pt",
                      "DE": "de", "AT": "de", "FR": "fr", "IN": "hi", "JP": "ja"}
 
 

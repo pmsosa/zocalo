@@ -24,6 +24,10 @@ from .registry import BY_ID, allowed, files, present
 MISSING_RE = re.compile(r"(don.?t know|dont know|refus|no answer|not asked|missing|skipped|not applicable|^n/?a$|"
                         r"dk/|^dk$|no sabe|no contesta|ns/nr|no responde|inapplicable|iap|prefer not|not available|"
                         r"other missing|^-\d|no aplica|sin dato|can.?t choose|not stated|^ref$)", re.I)
+ADMIN_RE = re.compile(r"(^EA[-_ ]|interviewer|enumerator|respondent (was|honest|understood|attitude|cooperat)|"
+                      r"^int\b|psu|sampling|callback|^time |duration|language of interview|others present|"
+                      r"questionnaire|^date|^weight|^wt\b)", re.I)
+NOT_MENTIONED_RE = re.compile(r"(not mention|no mencion|not selected|no seleccion|^mentioned$|^menciona$)", re.I)
 DK_RE = re.compile(r"(don.?t know|dont know|not sure|^dk|no sabe|unsure|can.?t choose|undecided)", re.I)
 
 
@@ -46,6 +50,7 @@ def weighted_sample(weights: np.ndarray, n: int, seed: int) -> np.ndarray:
 def clean_label(s) -> str:
     s = str(s).strip()
     s = re.sub(r"^\(?-?\d+\)?[.:)]\s+", "", s)          # "1. Yes" → "Yes"
+    s = re.sub(r"^[A-Z]{2,3}:\s+", "", s)               # "MX: Morena" → "Morena"
     return s
 
 
@@ -91,19 +96,26 @@ def _sex_from_label(label) -> str | None:
 
 
 # ---------- labelled files (.sav / .dta / .feather) ----------
-def read_meta(path: Path):
+def _read(path: Path, **kw):
+    """pyreadstat with an encoding fallback (some Stata files, e.g. the GSS, aren't valid UTF-8)."""
     import pyreadstat
     reader = pyreadstat.read_sav if path.suffix.lower() == ".sav" else pyreadstat.read_dta
-    _, meta = reader(str(path), metadataonly=True)
-    return meta
+    try:
+        return reader(str(path), **kw)
+    except Exception as e:
+        if "utf-8" not in str(e).lower() and "decode" not in str(e).lower():
+            raise
+        return reader(str(path), encoding="LATIN1", **kw)
+
+
+def read_meta(path: Path):
+    return _read(path, metadataonly=True)[1]
 
 
 def read_cols(path: Path, cols: list[str], row_offset: int = 0, row_limit: int = 0) -> pd.DataFrame:
-    import pyreadstat
     if path.suffix.lower() == ".feather":
         return pd.read_feather(path, columns=cols)
-    reader = pyreadstat.read_sav if path.suffix.lower() == ".sav" else pyreadstat.read_dta
-    df, _ = reader(str(path), usecols=cols, row_offset=row_offset, row_limit=row_limit, apply_value_formats=False)
+    df, _ = _read(path, usecols=cols, row_offset=row_offset, row_limit=row_limit, apply_value_formats=False)
     return df
 
 
@@ -135,7 +147,21 @@ SURVEYS = {
             "fields": {"age": ["age"], "sex": ["gender"], "region": ["state"], "education": ["educ"], "income": ["faminc"],
                        "employment": ["employ"], "race": ["race"], "marital": ["marstat"], "party": ["pid3"],
                        "ideology": ["ideo5"], "vote_last": ["voted_pres_24", "voted_pres_20"], "religion": ["religion"],
-                       "religiosity": ["relig_imp"]}, "weight": ["weight", "weight_cumulative"], "recent_years": 3},
+                       "religiosity": ["relig_imp"]}, "weight": ["weight", "weight_cumulative"], "recent_years": 3,
+            # the feather file keeps some columns as numeric codes; labels from the CES guide
+            "codes": {"sex": {1: "male", 2: "female"},
+                      "education": {1: "no high school", 2: "high school graduate", 3: "some college", 4: "2-year degree",
+                                    5: "4-year degree", 6: "post-graduate degree"},
+                      "race": {1: "White", 2: "Black", 3: "Hispanic", 4: "Asian", 5: "Native American", 6: "mixed race",
+                               7: "other race", 8: "Middle Eastern"},
+                      "employment": {1: "working full-time", 2: "working part-time", 3: "temporarily laid off", 4: "unemployed",
+                                     5: "retired", 6: "permanently disabled", 7: "homemaker", 8: "student", 9: "other"},
+                      "marital": {1: "married", 2: "separated", 3: "divorced", 4: "widowed", 5: "single", 6: "domestic partnership"},
+                      "party": {1: "Democrat", 2: "Republican", 3: "independent", 4: "other party"},
+                      "ideology": {1: "very liberal", 2: "liberal", 3: "moderate", 4: "conservative", 5: "very conservative"},
+                      "religion": {1: "Protestant", 2: "Catholic", 3: "Mormon", 4: "Orthodox Christian", 5: "Jewish", 6: "Muslim",
+                                   7: "Buddhist", 8: "Hindu", 9: "atheist", 10: "agnostic", 11: "nothing in particular", 12: "something else"},
+                      "religiosity": {1: "very important", 2: "somewhat important", 3: "not too important", 4: "not at all important"}}},
     "gss": {"name": "General Social Survey (US respondents)", "country": "US", "year_var": "year",
             "fields": {"age": ["age"], "sex": ["sex"], "region": ["region"], "education": ["degree"], "income": ["income16"],
                        "employment": ["wrkstat"], "race": ["race"], "marital": ["marital"], "party": ["partyid"],
@@ -306,7 +332,18 @@ def _person_from_row(sid: str, row, meta, use: dict, country: str, rng: random.R
             except (TypeError, ValueError, KeyError):
                 pass
             continue
-        val = labeller(meta, col)(raw) if meta is not None else (None if raw is None or (isinstance(raw, float) and math.isnan(raw)) or is_missing_label(raw) else clean_label(raw))
+        codes = SURVEYS.get(sid, {}).get("codes", {}).get(f)
+        if meta is None and codes is not None and not isinstance(raw, str):
+            try:
+                val = codes.get(int(float(raw)))
+            except (TypeError, ValueError):
+                val = None
+        elif meta is not None:
+            val = labeller(meta, col)(raw)
+        else:
+            val = None if raw is None or (isinstance(raw, float) and math.isnan(raw)) or is_missing_label(raw) else clean_label(raw)
+            if val is not None and re.fullmatch(r"-?\d+(\.0)?", str(val)):
+                val = None  # an unlabelled code is no use in a profile
         if val in (None, ""):
             continue
         if f == "sex":
@@ -329,7 +366,7 @@ def _views_vars(sid: str, df_cols: list[str], meta, use: dict, k: int, seed: int
     cands = []
     for c in df_cols:
         lab = labels.get(c) or ""
-        if c.lower() in demo or c in exclude or len(lab) < 20:
+        if c.lower() in demo or c in exclude or len(lab) < 20 or ADMIN_RE.search(lab):
             continue
         if re.match(r"^(f_|weight|wt|id|case|resp|qkey|interview|date|time|lang|mode|device|form|xtab|[a-z]?_?year)", c, re.I):
             continue
@@ -366,7 +403,7 @@ def _respondents(sid: str, country: str, n: int, seed: int, n_views: int = 12, e
             views = []
             for c in view_vars:
                 a = labeller(meta, c)(vdf.iloc[j][c])
-                if a not in (None, ""):
+                if a not in (None, "") and not NOT_MENTIONED_RE.search(str(a)):
                     views.append({"q": clean_question(labels.get(c, c)), "a": str(a), "var": c})
                 if len(views) >= n_views:
                     break
@@ -805,7 +842,9 @@ def _twin_items(n_items: int, n_people: int, seed: int, method: str) -> list[dic
     rng = random.Random(seed)
 
     def single(q):
-        return q and "single" in str(q.get("QuestionType", "")).lower() and 2 <= len(q.get("Options") or []) <= 8
+        # Qualtrics multiple choice with a single-answer selector (MAVR/MACOL are multi-answer)
+        return (q and q.get("QuestionType") == "MC" and not str((q.get("Settings") or {}).get("Selector", "")).startswith("MA")
+                and 2 <= len(q.get("Options") or []) <= 8)
 
     targets = [c for c in w4.columns if c != "pid" and single(by_col.get(c))]
     rng.shuffle(targets)
