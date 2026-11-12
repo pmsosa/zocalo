@@ -4,8 +4,9 @@ Zócalo never ships survey or census data. Each file comes from its publisher, u
 kinds:
 
 - **Automatic.** Press *download* on the Data page. Zócalo fetches the file from the publisher.
-- **By hand.** The publisher asks you to sign in or fill in a short form first. Download the file yourself and put it
-  in the folder shown below; the Data page shows *ready* once it finds it.
+- **By hand.** The publisher asks you to sign in or fill in a short form first. Download the file yourself, then
+  press **upload file** next to the source on the Data page (or put it in the folder shown below). The Data page
+  shows *ready* once it finds it.
 
 All files go in the **dataset folder**, set when Zócalo is deployed (`./deploy.sh --datasets-dir PATH`; by default
 `./datasets` next to the app). It can sit on an external drive. If the drive is unplugged, Zócalo says so and waits:

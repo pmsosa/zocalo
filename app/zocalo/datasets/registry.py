@@ -175,7 +175,8 @@ def overview(lang: str = "en") -> dict:
         item.update(st, indexable=bool(s.get("indexable")), indexed=s["id"] in indexed, allowed=allowed(s),
                     folder=str(source_dir(s["id"])))
         if s.get("instructions"):
-            item["instructions_html"] = md.markdown(s["instructions"].format(folder=str(source_dir(s["id"]))))
+            item["instructions_html"] = md.markdown(s["instructions"].format(folder=str(source_dir(s["id"])))
+                                                    + "\n\nOr press **upload file** on this page and choose the downloaded `.zip` or `.sav`.")
         out.append(item)
     return {"sources": out, "path": str(datasets_dir()), "present": present()}
 
@@ -282,6 +283,37 @@ def start_download(sid: str, options: dict | None = None) -> None:
     if sid in _tasks and not _tasks[sid].done():
         return
     _tasks[sid] = asyncio.get_event_loop().create_task(_download(sid))
+
+
+UPLOAD_TYPES = (".sav", ".dta", ".zip", ".csv")
+
+
+def save_upload(sid: str, filename: str, fileobj) -> list[str]:
+    """Put a hand-downloaded file in the source's folder (unzipping archives). Returns the data files now present."""
+    if sid not in BY_ID:
+        raise ValueError("Unknown source.")
+    name = Path(filename or "").name
+    if not name.lower().endswith(UPLOAD_TYPES):
+        raise ValueError("Upload the .sav, .dta or .zip file you downloaded.")
+    first_time = db.q1("SELECT 1 AS x FROM downloads WHERE status='ready' LIMIT 1") is None
+    if first_time and not datasets_dir().exists():
+        datasets_dir().mkdir(parents=True, exist_ok=True)
+    if not present():
+        raise ValueError("The dataset folder isn't available (drive unplugged?).")
+    d = source_dir(sid)
+    d.mkdir(parents=True, exist_ok=True)
+    (datasets_dir() / MARKER).touch(exist_ok=True)
+    dest = d / name
+    tmp = dest.with_suffix(dest.suffix + ".part")
+    with open(tmp, "wb") as out:
+        shutil.copyfileobj(fileobj, out, 1 << 20)
+    tmp.replace(dest)
+    if name.lower().endswith(".zip"):
+        _unzip(dest, d)
+    found = [f.name for f in files(sid)]
+    _set(sid, "ready" if found else "error", 1 if found else 0,
+         None if found else "The upload didn't contain a file this source can use.")
+    return found
 
 
 def start_indexing(sid: str) -> None:

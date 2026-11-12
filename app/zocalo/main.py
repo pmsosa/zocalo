@@ -31,8 +31,8 @@ async def startup() -> None:
     db.init()
     security.auth_mode()
     runner.resume_all(runner.recover_interrupted())
-    from .harness import recover_interrupted as harness_recover
-    harness_recover()
+    from . import harness
+    harness.resume_all(harness.recover_interrupted())
 
 
 # ---------- auth ----------
@@ -651,6 +651,19 @@ async def data_download(source_id: str, request: Request):
     except ValueError as e:
         raise HTTPException(400, str(e))
     return {"ok": True}
+
+
+@app.post("/api/data/{source_id}/upload")
+async def data_upload(source_id: str, request: Request, file: UploadFile):
+    """For sources that need a sign-in or form: upload the file you downloaded from the publisher."""
+    _admin(request)
+    import asyncio
+    from .datasets import registry
+    try:
+        found = await asyncio.to_thread(registry.save_upload, source_id, file.filename, file.file)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": bool(found), "files": found}
 
 
 @app.post("/api/data/{source_id}/index")

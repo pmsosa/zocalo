@@ -257,3 +257,35 @@ def test_resume_keeps_answers_and_finishes():
         assert s["status"] == "done"
         assert FakeModel.calls - before == 20          # only the missing answers were asked
         assert db.q1("SELECT COUNT(*) AS n FROM answers WHERE study_id=? AND ok=1", sid)["n"] == 30
+
+
+def test_upload_manual_source():
+    import io
+    import pandas as pd
+    import pyreadstat
+    from zocalo.main import app
+    db.set_setting("auth_mode", "none")
+    path = os.path.join(tempfile.mkdtemp(), "wvs7.sav")
+    pyreadstat.write_sav(pd.DataFrame({"Q260": [1, 2], "Q262": [30, 40]}), path)
+    with TestClient(app) as c:
+        bad = c.post("/api/data/wvs/upload", files={"file": ("notes.txt", b"x", "text/plain")})
+        assert bad.status_code == 400
+        r = c.post("/api/data/wvs/upload", files={"file": ("wvs7.sav", open(path, "rb").read(), "application/octet-stream")}).json()
+        assert r["ok"] and r["files"] == ["wvs7.sav"]
+        assert next(s for s in c.get("/api/data").json()["sources"] if s["id"] == "wvs")["status"] == "ready"
+
+
+def test_harness_resume_skips_scored_items(monkeypatch):
+    from zocalo import harness
+    from zocalo.datasets import loaders
+    items = [{"ref": f"i{k}", "text": f"Q{k}?", "options": ["A", "B"], "real": [0.5, 0.5], "country": "US"} for k in range(4)]
+    monkeypatch.setattr(loaders, "testset_items", lambda tsid, cfg: items)
+    rid = db.ex("INSERT INTO harness_runs(testset,model_ref,method,config_json,status,created_at) VALUES(?,?,?,?,?,?)",
+                "fake", "none", "uniform", json.dumps({"testset": "fake", "method": "uniform"}), "running", db.now())
+    db.ex("INSERT INTO harness_items(run_id,item_ref,qtype,real_json,sim_json,abs_error,meta_json) VALUES(?,?,?,?,?,?,?)",
+          rid, "i0", "opinion", "[0.5,0.5]", "[0.5,0.5]", 0.0, json.dumps({"max": 0, "missed": 0, "predicted_p80": 15}))
+    assert rid in harness.recover_interrupted()
+    asyncio.run(harness._run(rid, {"testset": "fake", "method": "uniform"}))
+    refs = sorted(r["item_ref"] for r in db.q("SELECT item_ref FROM harness_items WHERE run_id=?", rid))
+    assert refs == ["i0", "i1", "i2", "i3"]          # i0 kept, not scored twice
+    assert db.q1("SELECT status FROM harness_runs WHERE id=?", rid)["status"] == "done"

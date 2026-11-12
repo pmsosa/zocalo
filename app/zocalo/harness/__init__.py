@@ -37,8 +37,18 @@ Options:
 Estimate the share of adults choosing each option. Reply with JSON only: {{"probabilities": {{"A": 0.0, ...}}}}"""
 
 
-def recover_interrupted() -> None:
-    db.ex("UPDATE harness_runs SET status='stopped', status_msg='Interrupted by a restart.' WHERE status IN ('running','queued')")
+def recover_interrupted() -> list[int]:
+    """Runs that a restart interrupted pick up where they stopped: questions already scored are kept."""
+    ids = [r["id"] for r in db.q("SELECT id FROM harness_runs WHERE status IN ('running','queued')")]
+    for rid in ids:
+        db.ex("UPDATE harness_runs SET status_msg='Resumed after a restart.' WHERE id=?", rid)
+    return ids
+
+
+def resume_all(ids: list[int]) -> None:
+    for rid in ids:
+        r = db.q1("SELECT config_json FROM harness_runs WHERE id=?", rid)
+        asyncio.get_event_loop().create_task(_run(rid, db.loads(r["config_json"], {})))
 
 
 def overview() -> dict:
@@ -177,10 +187,14 @@ async def _run(rid: int, cfg: dict) -> None:
         if not items:
             raise ValueError("No usable questions in this test set for these settings.")
         sem = asyncio.Semaphore(int(db.get_setting("concurrency", 6)))
-        total_cost, done, coverage_hits, coverage_n = 0.0, 0, 0, 0
+        scored = {r["item_ref"] for r in db.q("SELECT item_ref FROM harness_items WHERE run_id=?", rid)}
+        total_cost, done = 0.0, len(scored)
         for item in items:
             if rid in _cancel:
                 break
+            if item["ref"] in scored:
+                continue
+            cost_before = total_cost
             individual = []
             if method == "uniform":
                 sim = [1 / len(item["options"])] * len(item["options"])
@@ -205,9 +219,7 @@ async def _run(rid: int, cfg: dict) -> None:
             met = item_metrics(item["real"], sim)
             est = errors.estimate(item.get("qtype", "opinion"), item.get("topical", False), len(item.get("people") or [1] * 1000),
                                   False, item.get("country") or "US")
-            coverage_n += 1
-            coverage_hits += int(met["mae"] <= est["p80"])
-            meta = {"max": met["max"], "tvd": met["tvd"], "missed": met["missed"], "spread_ratio": _spread_ratio(item["real"], sim)
+            meta = {"cost": round(total_cost - cost_before, 6), "max": met["max"], "tvd": met["tvd"], "missed": met["missed"], "spread_ratio": _spread_ratio(item["real"], sim)
                     if item.get("ordered") else None, "topical": int(bool(item.get("topical"))), "text": item["text"],
                     "options": item["options"], "country": item.get("country"), "predicted_p80": est["p80"]}
             if individual:
@@ -232,8 +244,8 @@ async def _run(rid: int, cfg: dict) -> None:
                    "spread_ratio": round(float(np.mean([m["spread_ratio"] for m in metas if m.get("spread_ratio")])), 3)
                    if any(m.get("spread_ratio") for m in metas) else None,
                    "individual_accuracy": round(float(np.mean(acc)), 3) if acc else None,
-                   "coverage_p80": round(coverage_hits / coverage_n, 3) if coverage_n else None,
-                   "cost": round(total_cost, 4)}
+                   "coverage_p80": round(float(np.mean([r["abs_error"] <= m.get("predicted_p80", 1e9) for r, m in zip(rows, metas)])), 3),
+                   "cost": round(sum(m.get("cost", 0) for m in metas), 4)}
         status = "stopped" if rid in _cancel else "done"
         _cancel.discard(rid)
         db.ex("UPDATE harness_runs SET status=?, progress=1, metrics_json=?, finished_at=? WHERE id=?",

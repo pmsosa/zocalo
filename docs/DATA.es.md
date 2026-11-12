@@ -5,7 +5,8 @@ dos tipos:
 
 - **Automáticos.** Presiona *descargar* en la página Datos. Zócalo trae el archivo de quien lo publica.
 - **A mano.** Quien lo publica te pide primero iniciar sesión o llenar un formulario corto. Descarga el archivo tú mismo
-  y ponlo en la carpeta que se indica abajo; la página Datos muestra *listo* cuando lo encuentra.
+  y luego presiona **subir archivo** junto a la fuente en la página Datos (o ponlo en la carpeta que se indica abajo).
+  La página Datos muestra *listo* cuando lo encuentra.
 
 Todos los archivos van en la **carpeta de datos**, que se define al instalar Zócalo (`./deploy.sh --datasets-dir PATH`;
 de forma predeterminada `./datasets`, junto a la app). Puede estar en un disco externo. Si el disco está desconectado,

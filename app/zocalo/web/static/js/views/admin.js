@@ -1,6 +1,6 @@
 // Settings, usage, data sources, tests (the harness) and panels.
 import { t, lang, loadLang } from "../i18n.js";
-import { h, GET, POST, PUT, DEL, handle, toast, money, num, pct, when, statusTag, progressBar, confirmBox, UI, saveUI, applyTheme, modal } from "../ui.js";
+import { h, GET, POST, PUT, DEL, api, handle, toast, money, num, pct, when, statusTag, progressBar, confirmBox, UI, saveUI, applyTheme, modal } from "../ui.js";
 import { onCleanup, refreshMe, rerender, state } from "../app.js";
 import { segmented } from "./common.js";
 
@@ -166,7 +166,9 @@ export async function renderData(_, v) {
     v.append(h("div.card", { style: { marginBottom: "14px" } }, h("h3", title), h("table.t", h("tbody", items.map(s => {
       const act = s.status === "ready" ? (s.indexable ? h("button.link.small", { onclick: async () => { try { await POST(`/api/data/${s.id}/index`); toast(t("Indexing questions…")); } catch (e) { handle(e); } } }, s.indexed ? t("re-index") : t("index questions")) : null)
         : s.access === "auto" ? h("button.btn.small", { disabled: (s.status === "downloading" || !d.present) || null, onclick: async () => { try { await POST(`/api/data/${s.id}/download`); toast(t("Downloading…")); setTimeout(() => dispatchEvent(new HashChangeEvent("hashchange")), 1500); } catch (e) { handle(e); } } }, t("download"))
-        : h("button.link.small", { onclick: () => modal(s.name, h("div.doc.small", { html: s.instructions_html }), [[t("Done"), true]]) }, t("how to get it"));
+        : h("div.row", { style: { justifyContent: "flex-end", flexWrap: "nowrap" } },
+            h("button.link.small", { onclick: () => modal(s.name, h("div.doc.small", { html: s.instructions_html }), [[t("Done"), true]]) }, t("how to get it")),
+            uploadButton(s));
       return h("tr", h("td", h("b", { style: { fontWeight: 500 } }, s.name), h("div.small.muted", s.description), h("div.mono", `${s.licence}${s.noncommercial ? " · " + t("non-commercial") : ""} · ${s.size || ""}`)),
         h("td", statusTag(s.status), s.status === "downloading" ? progressBar(s.progress) : null, s.message ? h("div.small.faint", s.message) : null),
         h("td.num", act));
@@ -175,6 +177,21 @@ export async function renderData(_, v) {
   if (d.sources.some(s => s.status === "downloading" || s.status === "indexing")) {
     const timer = setTimeout(() => location.hash === "#/data" && dispatchEvent(new HashChangeEvent("hashchange")), 2500); onCleanup(() => clearTimeout(timer));
   }
+}
+
+function uploadButton(s) {
+  const input = h("input", { type: "file", accept: ".sav,.dta,.zip,.csv", style: { display: "none" }, onchange: async () => {
+    const f = input.files[0]; if (!f) return;
+    const fd = new FormData(); fd.append("file", f);
+    btn.disabled = true; btn.textContent = t("uploading…");
+    try {
+      const r = await api("POST", `/api/data/${s.id}/upload`, fd);
+      toast(r.ok ? t("Added: {f}", { f: r.files.join(", ") }) : t("The upload didn't contain a usable file."), !r.ok);
+      dispatchEvent(new HashChangeEvent("hashchange"));
+    } catch (e) { handle(e); btn.disabled = false; btn.textContent = t("upload file"); }
+  } });
+  const btn = h("button.btn.small", { onclick: () => input.click() }, t("upload file"));
+  return h("span", input, btn);
 }
 
 // ================= tests =================
