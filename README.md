@@ -1,9 +1,5 @@
 ![Zócalo](docs/banner.jpg)
 
-<p align="center">
-  <a href="https://github.com/pmsosa/zocalo"><img src="docs/brand/logo-mark.png" alt="Zócalo" width="120"></a>
-</p>
-
 <h1 align="center">Zócalo</h1>
 
 <p align="center">
