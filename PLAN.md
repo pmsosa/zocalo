@@ -290,7 +290,7 @@ Built in one pass: Phases 0–4 and 6, plus the Phase 7 import format and maths.
 - Docs: METHODOLOGY (EN/ES), DATA (EN/ES), README with demo screenshots.
 
 Still open:
-- The logo and banner (the user is choosing). Once chosen, run app-icons for the icon set and add the README banner.
+- Done 2026-11-12: logo (Classic + one-dot small mark), icon set, README banner.
 - Phase 5 (fine-tuning) and a paid human panel (Phase 7) were not in scope.
 - WVS, ESS, Arab Barometer and Pew are manual downloads; nothing is tested on them yet.
 - Measured error needs more test runs (20+ items per question type) before it replaces the published priors.
