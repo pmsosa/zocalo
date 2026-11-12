@@ -71,7 +71,7 @@ async function renderResults(st, v) {
   v.append(head(st));
   if (st.status_msg) v.append(h("div.warn", { style: { marginBottom: "12px" } }, st.status_msg));
   if (!res.questions.length || !res.people.length) { v.append(h("div.card.empty", h("h2", t("No answers")), h("p", t("Every call failed. Check the model in Settings, then duplicate and run again.")))); return; }
-  let qi = 0, arm = res.questions[0].main_arm, colorBy = "answer", layout = "split", flt = {}, ansFilter = null;
+  let qi = 0, arm = res.questions[0].main_arm, colorBy = "answer", layout = "answer", flt = {}, ansFilter = null;
   const side = h("div.side"), stage = h("div.stage", { style: { height: "min(78vh, 760px)" } });
   const mainCol = h("div.grid");
   v.append(h("div.split", side, mainCol)); mainCol.append(stage);

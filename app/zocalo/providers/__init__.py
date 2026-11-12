@@ -67,8 +67,9 @@ async def list_models(kind: str, key: str, base_url: str | None) -> list[dict]:
                 _raise_for(r)
                 body = r.json()
                 for m in body.get("models", []):
-                    if "generateContent" in m.get("supportedGenerationMethods", []):
-                        mid = m["name"].split("/", 1)[-1]
+                    mid = m["name"].split("/", 1)[-1]
+                    if ("generateContent" in m.get("supportedGenerationMethods", [])
+                            and not re.search(r"tts|image|embedding|audio|live|omni|robotics|veo|imagen|aqa", mid)):
                         out.append({"id": mid, "label": m.get("displayName") or mid})
                 token = body.get("nextPageToken")
                 if not token:

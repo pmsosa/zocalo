@@ -226,9 +226,26 @@ async def add_provider(request: Request):
                 "VALUES(?,?,?,?,?,?,?,?,?,?)", kind, b.get("label") or providers.KINDS[kind]["name"], base,
                 security.encrypt(key) if key else None, security.key_hint(key) if key else None, status, msg, db.now(),
                 json.dumps(models), db.now())
+    failed = {}
     for mid in b.get("models") or []:
-        _add_model(pid, mid, models)
-    return _provider_out(db.q1("SELECT * FROM providers WHERE id=?", pid))
+        err = await _try_model(pid, mid)
+        if err:
+            failed[mid] = err
+        else:
+            _add_model(pid, mid, models)
+    return _provider_out(db.q1("SELECT * FROM providers WHERE id=?", pid)) | {"failed_models": failed}
+
+
+async def _try_model(provider_id: int, model_id: str) -> str | None:
+    """A tiny real call, because providers list models they no longer serve. Returns an error message or None."""
+    p = providers.provider_row(provider_id)
+    try:
+        comp = await providers.complete(p["kind"], security.decrypt(p["key_enc"]), p["base_url"], model_id,
+                                        "Reply with JSON only.", 'Reply with {"ok": true}', max_tokens=50)
+        providers.parse_json(comp.text)
+        return None
+    except Exception as e:
+        return str(e)[:300]
 
 
 def _add_model(provider_id: int, model_id: str, listing: list[dict] | None = None) -> None:
@@ -282,6 +299,9 @@ async def add_model(request: Request):
     _admin(request)
     b = await request.json()
     p = providers.provider_row(int(b["provider_id"]))
+    err = await _try_model(p["id"], b["model_id"])
+    if err:
+        raise HTTPException(400, f"That model didn't answer a test call: {err}")
     _add_model(p["id"], b["model_id"], json.loads(p["models_json"]))
     return list_models()
 

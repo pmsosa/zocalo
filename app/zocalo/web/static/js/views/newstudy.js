@@ -43,7 +43,7 @@ export async function render(_, v) {
       const di = h("input", { type: "checkbox", onchange: () => S.config.design_informed = di.checked });
       kindExtra.append(h("div.grid", { style: { marginTop: "10px" } }, h("label.f", t("Treatment (the news)"), tr), h("label.f", t("Placebo (neutral news)"), pl),
         h("label.tog", within, h("span", t("Also run a same-person group"), h("small", t("A further matched group answers, reads the news, then answers again in the same conversation. The gap from the between-group result shows how much asking twice exaggerates the effect.")))),
-        h("label.tog", di, h("span", t("Tell the model it's an experiment"), h("small", t("Some studies found this reduces over-reaction. Leave off to compare.")))))));
+        h("label.tog", di, h("span", t("Tell the model it's an experiment"), h("small", t("Some studies found this reduces over-reaction. Leave off to compare."))))));
     }
     if (S.kind === "ab") {
       const a = h("textarea", { placeholder: t("Optional: something half A reads first (e.g. ad copy A)"), oninput: () => S.config.stimulus_a = a.value });
@@ -67,7 +67,7 @@ export async function render(_, v) {
     people = d.people;
     if (S.panel_id) { const pn = panels.panels.find(p => p.id === S.panel_id); }
     fe = filterEditor(people, f => { S.filter = f; updateWho(); });
-    filterBox.innerHTML = ""; filterBox.append(S.panel_id ? h("p.small.muted", t("Using the saved panel; filters below narrow it further.")) : null, fe.el);
+    filterBox.innerHTML = ""; if (S.panel_id) filterBox.append(h("p.small.muted", t("Using the saved panel; filters below narrow it further."))); filterBox.append(fe.el);
     updateWho();
   }
   function updateWho() {

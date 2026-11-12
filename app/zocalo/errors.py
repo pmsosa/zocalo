@@ -84,10 +84,10 @@ def estimate(qtype: str, topical: bool, n_people: int, is_subgroup: bool, countr
         m = _measured(qtype, t)
         if m:
             p50, p80, n_items, _ = m
-            kind, basis = "measured", f"{qtype}{', topical' if t else ''} questions in this install's tests ({n_items} items)"
+            kind, basis = "measured", f"{qtype}{', topical' if t else ''} questions ({n_items} tested)"
         else:
             p50, p80 = PRIORS[(qtype, t)]
-            kind, basis = "prior", f"{qtype}{', topical' if t else ''} questions, from published evaluations (not yet tested here)"
+            kind, basis = "prior", f"{qtype}{', topical' if t else ''} questions"
     f = subgroup_factor(n_people, is_subgroup)
     if country not in ("US",):
         f *= 1.25

@@ -27,7 +27,7 @@ const ROUTES = [
   [/^\/chats$/, people.renderChats], [/^\/chats\/new$/, people.renderNewGroup], [/^\/chats\/(\d+)$/, people.renderChat],
   [/^\/panels$/, admin.renderPanels], [/^\/tests$/, admin.renderTests], [/^\/tests\/(\d+)$/, admin.renderTestRun],
   [/^\/data$/, admin.renderData], [/^\/usage$/, admin.renderUsage], [/^\/settings$/, admin.renderSettings],
-  [/^\/methodology$/, p => docs.renderDoc("methodology")], [/^\/docs\/data$/, p => docs.renderDoc("data")],
+  [/^\/methodology$/, (p, v) => docs.renderDoc("methodology", v)], [/^\/docs\/data$/, (p, v) => docs.renderDoc("data", v)],
   [/^\/login$/, docs.renderLogin], [/^\/more$/, renderMore],
 ];
 

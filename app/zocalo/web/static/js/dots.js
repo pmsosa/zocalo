@@ -103,7 +103,8 @@ export function createDots(stage, opts) {
       let a = .18 + depth * .82;
       if (anySel && !selected(p)) a *= .13;
       let size = (1.6 + depth * 1.5) * (UI.big ? 1.7 : 1) * (UI.shapes ? 1.25 : 1);
-      if (layout !== "sphere") size += (Math.min(size, splitGap * (UI.shapes ? .58 : .62)) - size) * E;
+      // in clusters, dots grow for small groups (up to 7px) but always keep a clear gap
+      if (layout !== "sphere") { const fit = Math.min(Math.max(size, splitGap * .36), 7 * (UI.big ? 1.4 : 1), splitGap * (UI.shapes ? .58 : .62)); size += (fit - size) * E; }
       if (p === hover) size *= 2.2;
       ctx.globalAlpha = a;
       const k = catOf(p); ctx.fillStyle = cols[k] ?? "#999";

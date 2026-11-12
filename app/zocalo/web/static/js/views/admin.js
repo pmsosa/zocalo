@@ -70,7 +70,13 @@ export async function renderSettings(_, v) {
   addBtn.onclick = async () => {
     const chosen = [...modelPick.selectedOptions].map(o => o.value);
     if (!chosen.length) return toast(t("Pick at least one model."), true);
-    try { await POST("/api/providers", { kind: kindSel.value, key: key.value.trim(), base_url: base.value.trim(), models: chosen }); key.value = ""; status.textContent = ""; modelPick.style.display = search.style.display = "none"; addBtn.disabled = true; refresh(); toast(t("Provider added")); }
+    try {
+      const r = await POST("/api/providers", { kind: kindSel.value, key: key.value.trim(), base_url: base.value.trim(), models: chosen });
+      key.value = ""; status.textContent = ""; modelPick.style.display = search.style.display = "none"; addBtn.disabled = true; refresh();
+      const bad = Object.entries(r.failed_models || {});
+      if (bad.length) toast(t("Provider added, but these models failed a test call and weren't added: {m}", { m: bad.map(([k, v]) => `${k} (${v.slice(0, 80)})`).join("; ") }), true);
+      else toast(t("Provider added"));
+    }
     catch (e) { handle(e); }
   };
   showBase();
@@ -180,7 +186,7 @@ export async function renderTests(_, v) {
     h("p.small.muted", t("These numbers set the error shown on every result. Until your own tests cover a type (20+ questions), Zócalo uses figures from published evaluations.")),
     h("div.scroll-x", h("table.t", h("thead", h("tr", h("th", t("Type")), h("th.num", t("published: typical")), h("th.num", t("1 in 5 over")), h("th.num", t("yours: typical")), h("th.num", t("1 in 5 over")), h("th.num", t("questions tested")))),
       h("tbody", d.error_table.map(r => h("tr", h("td", t(r.qtype) + (r.topical ? ` · ${t("topical")}` : "")), h("td.num", `±${r.prior_p50}`), h("td.num", `±${r.prior_p80}`),
-        h("td.num", r.measured_p50 != null ? `±${r.measured_p50.toFixed(1)}` : "—"), h("td.num", r.measured_p80 != null ? `±${r.measured_p80.toFixed(1)}` : "—"), h("td.num", r.items)))))))));
+        h("td.num", r.measured_p50 != null ? `±${r.measured_p50.toFixed(1)}` : "—"), h("td.num", r.measured_p80 != null ? `±${r.measured_p80.toFixed(1)}` : "—"), h("td.num", r.items))))))));
   // new run
   const ts = h("select", d.testsets.map(x => h("option", { value: x.id, disabled: !x.ready || null }, `${x.name}${x.ready ? "" : " · " + t("not downloaded")}`)));
   const meth = h("select", [["population", t("simulated people (the real method)")], ["aggregate", t("baseline: ask the model for the shares directly")],

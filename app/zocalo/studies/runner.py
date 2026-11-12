@@ -148,8 +148,10 @@ async def run(study_id: int, lang: str = "en") -> None:
         _cancel.discard(study_id)
         status, msg = ("stopped", "Stopped: the monthly spending cap was reached.") if stopped == "cap" else ("stopped", "Stopped by you.")
     else:
-        status = "done"
-        msg = f"{failed} answers failed (see the log)." if failed else None
+        ok = db.q1("SELECT COUNT(*) AS n FROM answers WHERE study_id=? AND ok=1", study_id)["n"]
+        first = db.q1("SELECT error FROM answers WHERE study_id=? AND ok=0 LIMIT 1", study_id)
+        status = "done" if ok else "error"
+        msg = (f"{failed} of {failed + ok} answers failed. First error: {first['error']}" if failed else None)
     db.ex("UPDATE studies SET status=?, status_msg=?, progress=?, cost_actual=?, finished_at=? WHERE id=?",
           status, msg, done / max(total, 1), round(spent, 6), db.now(), study_id)
 

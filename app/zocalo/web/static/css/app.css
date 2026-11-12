@@ -109,6 +109,7 @@ textarea { resize: vertical; line-height: 1.45; min-height: 64px; }
 /* ---- tables ---- */
 table.t { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.t th { text-align: left; font-weight: 500; color: var(--graphite); font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--stone); }
+table.t th.num { text-align: right; }
 table.t td { padding: 8px; border-bottom: 1px solid var(--mist); vertical-align: top; }
 table.t tr.click { cursor: pointer; } table.t tr.click:hover td { background: var(--mist); }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
