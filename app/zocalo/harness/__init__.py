@@ -70,9 +70,10 @@ def error_table() -> list[dict]:
             prior = errors.PRIORS[(qtype, topical)]
             out.append({"qtype": qtype, "topical": bool(topical), "prior_p50": prior[0], "prior_p80": prior[1],
                         "measured_p50": m[0] if m else None, "measured_p80": m[1] if m else None,
-                        "items": m[2] if m else len(db.q(
-                            "SELECT hi.id FROM harness_items hi JOIN harness_runs hr ON hr.id=hi.run_id WHERE "
-                            "hr.status='done' AND hr.method='population' AND hi.qtype=?", qtype))})
+                        "items": m[2] if m else sum(1 for r in db.q(
+                            "SELECT hi.meta_json FROM harness_items hi JOIN harness_runs hr ON hr.id=hi.run_id WHERE "
+                            "hr.status='done' AND hr.method='population' AND hi.qtype=?", qtype)
+                            if db.loads(r["meta_json"], {}).get("topical", 0) == topical)})
     return out
 
 

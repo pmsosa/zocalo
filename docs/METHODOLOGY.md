@@ -227,6 +227,27 @@ model does.
 These match the published range (about 10–20 points). The starting error ranges held on 62–67% of questions instead of
 80%, so they were too optimistic for these sets. Measured values replace them as tests accumulate.
 
+**Second batch (November 2026, 8 questions × 20 people per set, same seed for comparisons).**
+
+| Set | Flash-Lite: simulated people | Flash-Lite: ask for the shares | Gemini 3.6 Flash: simulated people | Uniform |
+|---|---|---|---|---|
+| Afrobarometer, Kenya | 9.4 | 9.0 | 8.2 | 17.6 |
+| Latinobarómetro, Brazil | 12.6 | 9.1 | 8.5 | 19.8 |
+| Afrobarometer: Nigeria, South Africa, Ghana | 10.2, 8.9, 12.5 | | | |
+| Latinobarómetro: Argentina, Colombia | 16.5, 16.5 | | | |
+| GSS (US) | 7.7 | | | |
+| Twin-2K-500 | 11.4 | | | |
+
+Mean absolute error per question, in points. What it shows:
+
+- Measured opinion error is now **about ±9.6 typical and ±17.3 at the 80th percentile** (102 questions), wider than the
+  published starting figures of ±7 / ±15, and results now use it.
+- **With the cheapest model, simulated people did no better than simply asking the model for the country's shares.**
+  The stronger model's simulated people did better than both (8.2–8.5). Model quality matters more than method.
+- Individual accuracy against the no-AI baseline was mixed: lower in Kenya (43% vs 51%), higher in Brazil
+  (61% vs 53%).
+- The measured figures pool every model tested. Per-model figures are the next improvement.
+
 **Measures.**
 
 - **Mean absolute error per question**, in points, across answer options.
