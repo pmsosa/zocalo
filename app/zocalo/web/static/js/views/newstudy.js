@@ -60,6 +60,7 @@ export async function render(_, v) {
   const sizeIn = h("input", { type: "number", min: 10, placeholder: t("everyone who matches"), oninput: () => { S.size = +sizeIn.value || null; updateWho(); } });
   const whoLine = h("div.q", { style: { fontSize: "18px", margin: "12px 0 0" } });
   const bigWarn = h("div.warn.hidden");
+  const capNote = h("div.warn.hidden");
   const filterBox = h("div");
   let people = [], fe = null;
   async function loadPeople() {
@@ -74,6 +75,10 @@ export async function render(_, v) {
     const n = people.filter(p => matches(p, S.filter)).length;
     const k = S.size ? Math.min(S.size, n) : n;
     whoLine.innerHTML = ""; whoLine.append(describe(S.filter), h("span", ` · ${num(k)} ${t("people")}`));
+    capNote.innerHTML = "";
+    if (S.size && S.size > n) capNote.append(t("Only {n} people in this population match, so all of them will be asked. To ask more, ", { n: num(n) }),
+      h("a", { href: "#/population" }, t("build a bigger population")), ".");
+    capNote.classList.toggle("hidden", !(S.size && S.size > n));
     bigWarn.classList.toggle("hidden", k <= 10000);
     bigWarn.textContent = t("Over 10,000 people: this may cost a lot. Check the estimate before running.");
   }
@@ -150,7 +155,7 @@ export async function render(_, v) {
   v.append(h("div.grid", { style: { maxWidth: "980px" } },
     h("div.card", h("div.eyebrow", t("1 · kind")), h("div.row", kinds, h("div.spacer")), kindHelp, name, kindExtra),
     h("div.card", h("div.eyebrow", t("2 · who to ask")), h("div.fields", h("label.f", t("Population"), popSel), h("label.f", t("Saved panel"), panelSel)),
-      h("div", { style: { height: "12px" } }), filterBox, h("label.f", { style: { marginTop: "10px", maxWidth: "260px" } }, t("How many (random sample)"), sizeIn), whoLine, bigWarn),
+      h("div", { style: { height: "12px" } }), filterBox, h("label.f", { style: { marginTop: "10px", maxWidth: "260px" } }, t("How many (random sample)"), sizeIn), whoLine, capNote, bigWarn),
     h("div", h("div.eyebrow", { style: { margin: "4px 2px 8px" } }, t("3 · what to ask")), qBox),
     h("div.card", h("div.eyebrow", t("4 · models")), modelBox, h("div", { style: { marginTop: "10px" } }, method),
       h("p.small.muted", t("More than one model? Each person is asked by each model, and results show them together and separately."))),
