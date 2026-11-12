@@ -1,7 +1,7 @@
 {
   "name": "Zócalo",
   "short_name": "Zócalo",
-  "description": "Simulated survey respondents, with honest error.",
+  "description": "The public square, simulated.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

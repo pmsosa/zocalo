@@ -7,7 +7,7 @@
 <h1 align="center">Zócalo</h1>
 
 <p align="center">
-  <b>Simulated survey respondents, with honest error.</b><br>
+  <b>The public square, simulated.</b><br>
   Build a population from real census and survey records, ask it anything, talk to any person in it,<br>
   and see every answer with how far off it is likely to be, measured rather than assumed.<br>
   Open source, self-hosted, any model.

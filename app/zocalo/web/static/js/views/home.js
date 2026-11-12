@@ -7,7 +7,7 @@ export async function render(_, v) {
   const [st, models, pops] = await Promise.all([GET("/api/studies"), GET("/api/models"), GET("/api/populations")]);
   const hasModel = models.models.some(m => m.enabled), hasPop = pops.populations.length > 0;
   v.append(h("div.page-head",
-    h("h1", t("Ask anyone."), h("br"), h("span", t("Simulated people, honest error."))),
+    h("h1", t("Ask anyone."), h("br"), h("span", t("The public square, simulated."))),
     h("div.actions", h("a.btn", { href: "#/studies/new" }, t("new study")))));
   if (!hasModel || !hasPop || !st.studies.length) {
     const step = (n, done, title, text, href, cta) => h("div.card", { style: { opacity: done ? .62 : 1 } },
