@@ -1,8 +1,8 @@
 // Zócalo service worker: the app shell works offline; data always comes from the network.
-const CACHE = "zocalo-shell-v2";
+const CACHE = "zocalo-shell-v3";
 const SHELL = ["/", "/manifest.webmanifest", "/static/css/app.css", "/static/js/app.js", "/static/js/ui.js", "/static/js/dots.js",
   "/static/js/i18n.js", "/static/i18n/es.json", ...["home", "newstudy", "study", "population", "people", "admin", "docs", "common"].map(v => `/static/js/views/${v}.js`),
-  "/static/icons/favicon.svg", "/static/icons/favicon-dark.svg", "/static/icons/mark-light.svg", "/static/icons/mark-dark.svg",
+  "/static/icons/favicon.svg", "/static/icons/small-light.svg", "/static/icons/small-dark.svg", "/static/icons/favicon-32.png", "/static/icons/favicon-64.png",
   "/static/icons/icon-192.png", "/static/icons/icon-512.png", "/static/fonts/Inter.woff2", "/static/fonts/Manrope.woff2", "/static/fonts/JetBrainsMono.woff2"];
 // cache files one by one, so a single missing file can't stop the install
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => null)))).then(() => self.skipWaiting())); });

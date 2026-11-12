@@ -1,5 +1,7 @@
+![Zócalo](docs/banner.jpg)
+
 <p align="center">
-  <a href="https://github.com/pmsosa/zocalo"><img src="app/zocalo/web/static/icons/mark-light.svg" alt="Zócalo" width="150"></a>
+  <a href="https://github.com/pmsosa/zocalo"><img src="docs/brand/logo-mark.png" alt="Zócalo" width="120"></a>
 </p>
 
 <h1 align="center">Zócalo</h1>

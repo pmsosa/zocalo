@@ -23,7 +23,7 @@ export async function renderLogin(_, v) {
   const box = h("div.card.lift.login");
   function draw() {
     box.innerHTML = "";
-    box.append(h("img", { src: "/static/icons/mark-light.svg", alt: "", style: { width: "40px", marginBottom: "12px" } }),
+    box.append(h("img", { src: "/static/icons/logo-128.png", alt: "", style: { width: "48px", marginBottom: "12px" } }),
       h("h2", mode === "setup" ? t("Create the admin account") : mode === "join" ? t("Join with an invite") : t("Sign in to Zócalo")),
       mode === "join" ? code : null, u, h("div", { style: { height: "8px" } }), p,
       h("button.btn", { style: { marginTop: "12px", width: "100%", justifyContent: "center" }, onclick: submit }, mode === "setup" ? t("create account") : mode === "join" ? t("join") : t("sign in")),

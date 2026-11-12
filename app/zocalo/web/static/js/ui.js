@@ -60,9 +60,7 @@ export function applyTheme() {
   const dark = UI.theme === "dark" || (UI.theme === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
   const mark = document.getElementById("brandMark");
-  if (mark) mark.src = `/static/icons/mark-${dark ? "dark" : "light"}.svg`;
-  const fav = document.getElementById("favicon");
-  if (fav) fav.href = `/static/icons/favicon${dark ? "-dark" : ""}.svg`;
+  if (mark) mark.src = `/static/icons/small-${dark ? "dark" : "light"}.svg`;  // the favicon SVG follows the browser's own theme
   document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.content = dark ? "#1c1c1a" : "#efefe4");
 }
 export const isDark = () => document.documentElement.dataset.theme === "dark";
