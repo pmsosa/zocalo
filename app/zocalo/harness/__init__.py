@@ -96,7 +96,8 @@ def start(cfg: dict) -> int:
     if method == "knn" and ts["kind"] != "twins":
         raise ValueError("The kNN baseline needs a twins test set (respondent-level data).")
     rid = db.ex("INSERT INTO harness_runs(testset,model_ref,method,config_json,status,created_at) VALUES(?,?,?,?,?,?)",
-                cfg["testset"], str(cfg.get("model") or "none"), method, json.dumps(cfg), "queued", db.now())
+                cfg["testset"], str(cfg.get("model") or "none") if method in ("population", "aggregate") else "none",
+                method, json.dumps(cfg), "queued", db.now())
     asyncio.get_event_loop().create_task(_run(rid, cfg))
     return rid
 

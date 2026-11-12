@@ -206,11 +206,11 @@ export async function renderTests(_, v) {
   // scoreboard
   if (d.runs.length) {
     v.append(h("div.card", h("h3", t("Scoreboard")), h("p.small.muted", t("Mean error per question in points (lower is better). Pew's 2026 silicon-samples study: 12.4 points on average, 28% of questions over 15.")),
-      h("div.scroll-x", h("table.t", h("thead", h("tr", ["Test set", "Method", "Model", "Questions", "Mean error", "Typical", "Over 15", "Missed options", "Spread", "Ranges held", "Cost", ""].map(x => h("th", t(x))))),
+      h("div.scroll-x", h("table.t", h("thead", h("tr", ["Test set", "Method", "Model", "Questions", "Mean error", "Typical", "Over 15", "Missed options", "Spread", "Individual", "Ranges held", "Cost", ""].map(x => h("th", t(x))))),
         h("tbody", d.runs.map(r => h("tr.click", { onclick: () => location.hash = `#/tests/${r.id}` }, h("td.small", r.testset), h("td.small", t(r.method)), h("td.small", r.model_name),
           r.metrics ? [h("td.num", r.metrics.items), h("td.num", r.metrics.mae_mean), h("td.num", r.metrics.mae_p50), h("td.num", pct(r.metrics.share_over_15)), h("td.num", r.metrics.missed_options),
-            h("td.num", r.metrics.spread_ratio ?? "—"), h("td.num", r.metrics.coverage_p80 != null ? pct(r.metrics.coverage_p80) : "—"), h("td.num", money(r.metrics.cost))]
-            : h("td", { colspan: 8 }, statusTag(r.status), r.status === "running" ? progressBar(r.progress) : null, h("span.small.faint", " " + (r.status_msg || ""))),
+            h("td.num", r.metrics.spread_ratio ?? "—"), h("td.num", r.metrics.individual_accuracy != null ? pct(r.metrics.individual_accuracy) : "—"), h("td.num", r.metrics.coverage_p80 != null ? pct(r.metrics.coverage_p80) : "—"), h("td.num", money(r.metrics.cost))]
+            : h("td", { colspan: 9 }, statusTag(r.status), r.status === "running" ? progressBar(r.progress) : null, h("span.small.faint", " " + (r.status_msg || ""))),
           h("td.small.faint", when(r.created_at))))))),
       h("p.small.faint", t("“Spread” is simulated over real spread on scales (below 1 = answers too bunched). “Ranges held” is how often the shown 1-in-5 error range covered the real error (should be about 80%).")),
       h("p.small.faint", t("The no-AI “similar respondents” baseline sees other respondents' real answers to the same question, so its overall error is a ceiling for questions that have already been asked, not a fair rival. Compare its individual accuracy instead."))));

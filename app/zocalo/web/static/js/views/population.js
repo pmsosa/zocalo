@@ -9,6 +9,7 @@ import { openPersonDrawer } from "./people.js";
 export async function render([id], v) {
   const d = await GET("/api/populations");
   const pops = d.populations;
+  d.sources = null;  // fetched only when building, because listing countries can be slow
   v.append(h("div.page-head", h("h1", t("Population"), h("br"), h("span", t("Who your simulated people are."))),
     h("div.actions", pops.length ? h("button.btn.secondary", { onclick: () => buildForm(d.sources) }, t("build another")) : null)));
   if (!pops.length) { v.append(buildCard(d.sources)); return; }
@@ -78,7 +79,16 @@ export async function render([id], v) {
   upd();
 }
 
-function buildCard(sources) {
+function buildCard(sourcesIn) {
+  const box = h("div.card", { style: { maxWidth: "640px" } }, h("h2", t("Build a population")), h("p.small.muted", t("Checking which data is available…")));
+  (async () => {
+    const sources = sourcesIn || (await GET("/api/populations/sources")).sources;
+    box.replaceWith(buildForm_(sources));
+  })().catch(handle);
+  return box;
+}
+
+function buildForm_(sources) {
   const S = { source: "demo", country: "US", size: 2000 };
   const name = h("input", { type: "text", placeholder: t("Name (optional)") });
   const srcSel = h("select", { onchange: () => { S.source = srcSel.value; countries(); } },
@@ -117,7 +127,7 @@ function buildCard(sources) {
 }
 
 async function buildForm(sources) {
-  const back = h("div.modal-back", { onclick: e => { if (e.target === back) back.remove(); } }, h("div", { style: { width: "min(640px,100%)" } }, buildCard(sources)));
+  const back = h("div.modal-back", { onclick: e => { if (e.target === back) back.remove(); } }, h("div", { style: { width: "min(640px,100%)" } }, buildCard(null)));
   document.body.append(back);
   onCleanup(() => back.remove());
 }

@@ -45,8 +45,7 @@ function renderNav() {
   $("#settingsBtn").title = t("Settings");
 }
 
-function renderMore() {
-  const v = $("#view"); v.innerHTML = "";
+function renderMore(_, v) {
   v.append(h("div.page-head", h("h1", t("More"))),
     h("div.grid", [["#/panels", "Panels", "Saved groups of people you can ask again."], ["#/data", "Data", "Census and survey files, downloads, status."],
       ["#/usage", "Usage", "What each study cost."], ["#/methodology", "Methodology", "How Zócalo works, and its limits."],
@@ -69,7 +68,8 @@ async function route() {
   const path = location.hash.slice(1) || "/";
   if (state.me?.needs_login && path !== "/login") { location.hash = "#/login"; return; }
   renderNav();
-  const v = $("#view"); v.innerHTML = ""; window.scrollTo(0, 0);
+  // each route renders into its own container, so a slow page that finishes late can't draw over the next one
+  const v = document.createElement("div"); $("#view").replaceChildren(v); window.scrollTo(0, 0);
   for (const [re, fn] of ROUTES) {
     const m = path.match(re);
     if (m) { try { await fn(m.slice(1), v); } catch (e) { handle(e); } return; }

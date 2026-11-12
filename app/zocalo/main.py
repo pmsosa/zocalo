@@ -328,8 +328,15 @@ def delete_model(mid: int, request: Request):
 # ---------- populations, people, panels ----------
 @app.get("/api/populations")
 def populations():
-    return {"populations": db.q("SELECT id,name,country,source,size,status,created_at,meta_json FROM populations ORDER BY id DESC"),
-            "sources": popbuild.available_sources()}
+    return {"populations": db.q("SELECT id,name,country,source,size,status,created_at,meta_json FROM populations ORDER BY id DESC")}
+
+
+@app.get("/api/populations/sources")
+async def population_sources():
+    """Which sources can build people, and for which countries. Reading big files is slow the first time, so this
+    runs in a thread and is cached on disk per file version."""
+    import asyncio
+    return {"sources": await asyncio.to_thread(popbuild.available_sources)}
 
 
 @app.post("/api/populations")

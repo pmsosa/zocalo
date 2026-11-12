@@ -296,6 +296,24 @@ def _country_series(sid: str, df: pd.DataFrame, meta, ccol: str | None) -> pd.Se
 
 
 def countries_for(sid: str) -> list[dict]:
+    from ..config import DATA_DIR
+    fs = files(sid)
+    key = f"{sid}:" + ",".join(f"{p.name}:{p.stat().st_mtime:.0f}" for p in fs)
+    cache_file = DATA_DIR / "countries-cache.json"
+    try:
+        cache = json.loads(cache_file.read_text())
+    except (OSError, ValueError):
+        cache = {}
+    if key in cache:
+        return cache[key]
+    out = _countries_for(sid)
+    if out and out[0].get("code"):
+        cache[key] = out
+        cache_file.write_text(json.dumps(cache))
+    return out
+
+
+def _countries_for(sid: str) -> list[dict]:
     try:
         if sid in CENSUS:
             return [{"code": {"acs_pums": "US", "uk_census": "GB", "ca_pumf": "CA"}[sid],

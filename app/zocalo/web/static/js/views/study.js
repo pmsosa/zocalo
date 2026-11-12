@@ -20,6 +20,7 @@ export async function render([id], v) {
     v.append(head(st), box);
     const tick = async () => {
       st = await GET(`/api/studies/${sid}`);
+      if (!box.isConnected) return;
       if (st.status !== "running") { dispatchEvent(new HashChangeEvent("hashchange")); return; }
       box.innerHTML = "";
       box.append(h("div.eyebrow", t("running")), h("h2", `${pct(st.progress)}`), progressBar(st.progress),
