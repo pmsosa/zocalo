@@ -234,7 +234,8 @@ async def _run(rid: int, cfg: dict) -> None:
             db.ex("UPDATE harness_runs SET progress=? WHERE id=?", done / len(items), rid)
         rows = db.q("SELECT abs_error, meta_json FROM harness_items WHERE run_id=?", rid)
         if not rows:
-            raise ValueError("Nothing could be scored.")
+            raise ValueError("No other poll was close enough to any of these questions." if method == "anchor"
+                             else "Nothing could be scored.")
         maes = np.array([r["abs_error"] for r in rows])
         metas = [json.loads(r["meta_json"]) for r in rows]
         acc = [m["individual_accuracy"] for m in metas if "individual_accuracy" in m]

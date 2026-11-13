@@ -248,6 +248,47 @@ Mean absolute error per question, in points. What it shows:
   (61% vs 53%).
 - The measured figures pool every model tested. Per-model figures are the next improvement.
 
+**Third batch (November 2026, same design, new sources: ESS Round 11, WVS Wave 7, Arab Barometer Wave IX, Pew ATP W169).**
+
+| Set | Simulated people (3.6 Flash) | Ask for the shares (3.6 Flash) | Similar respondents (no AI) | Closest other poll | Uniform |
+|---|---|---|---|---|---|
+| ESS, Germany | 5.1 | 3.6 | 1.8 | 28.5 | 33.9 |
+| ESS, United Kingdom | 10.6 | 8.1 | 1.6 | 28.6 | 31.1 |
+| WVS, Japan | 10.8 | 8.6 | 2.5 | none close | 25.1 |
+| WVS, India | 14.6 | 10.1 | 1.8 | none close | 14.6 |
+| Arab Barometer, Egypt | 16.9 | 16.0 | 1.5 | 8.0 | 21.5 |
+| Arab Barometer, Morocco | 16.8 | 24.2 | 2.2 | 21.5 | 31.8 |
+| Pew W169, US | 10.9 | 4.8 | 5.2 | 10.4 | 18.9 |
+
+Smarter models on three of the sets (simulated people):
+
+| Set | 3.6 Flash | 3.8 Flash | 3.1 Pro |
+|---|---|---|---|
+| ESS, Germany | 5.1 | 4.1 | 4.4 |
+| Arab Barometer, Egypt | 16.9 | 16.2 | 14.9 |
+| Pew W169, US | 10.9 | 11.6 | 11.5 |
+| Cost per set | $0.10–0.13 | $0.11–0.14 | $0.66–0.80 |
+
+Mean absolute error per question, in points. What it shows:
+
+- **Asking the same model for the shares beat simulated people in six of seven sets** (mean 10.8 vs 12.2); simulated
+  people only won in Morocco. The second batch compared the stronger model's people against the *cheaper* model's
+  shares, which flattered the people. With the same model on both sides, simulated people are not yet adding accuracy
+  on whole-population shares. Their value is subgroups, individuals and conversations, which shares can't give.
+- **India: simulated people were no better than uniform** (14.6 vs 14.6). Egypt and Morocco were 16–17 points off.
+  The 25% widening for countries outside the US is, if anything, too small there.
+- **Germany was the best result so far** (5.1, individual accuracy 90%), the UK and US about 11.
+- **A smarter model barely helped**: 3.1 Pro was 0–2 points better or slightly worse, at six to seven times the cost,
+  and 3.8 Flash was level with 3.6 Flash. Below the Flash tier model quality mattered (second batch); above it, it
+  hasn't yet.
+- **The closest other poll** was poor in Europe (different questions match badly across surveys) and found nothing
+  close for Japan or India, but good in Egypt (8.0), where other Arab Barometer-style questions exist.
+- Measured opinion error is now **about ±8.8 typical and ±16.5 at the 80th percentile** (206 questions), and results
+  use it. The error ranges held on 63–100% of questions per set (target 80%); they were too narrow for Egypt and
+  Morocco.
+- Each row is 8 questions: treat any single number as rough. "Similar respondents" uses the same survey's own
+  respondents and is a ceiling, not a rival (see above).
+
 **Measures.**
 
 - **Mean absolute error per question**, in points, across answer options.

@@ -245,6 +245,65 @@ Coinciden con el rango publicado (unos 10–20 puntos). Los rangos de error inic
 preguntas en vez de 80%, así que fueron demasiado optimistas para estos conjuntos. Los valores medidos los reemplazan a
 medida que se acumulan pruebas.
 
+**Segundo lote (noviembre de 2026, 8 preguntas × 20 personas por conjunto, misma semilla para comparar).**
+
+| Conjunto | Flash-Lite: personas simuladas | Flash-Lite: pedir las proporciones | Gemini 3.6 Flash: personas simuladas | Uniforme |
+|---|---|---|---|---|
+| Afrobarómetro, Kenia | 9.4 | 9.0 | 8.2 | 17.6 |
+| Latinobarómetro, Brasil | 12.6 | 9.1 | 8.5 | 19.8 |
+| Afrobarómetro: Nigeria, Sudáfrica, Ghana | 10.2, 8.9, 12.5 | | | |
+| Latinobarómetro: Argentina, Colombia | 16.5, 16.5 | | | |
+| GSS (EE. UU.) | 7.7 | | | |
+| Twin-2K-500 | 11.4 | | | |
+
+- Con el modelo más barato, las personas simuladas no fueron mejores que pedirle al modelo las proporciones del país.
+- La precisión individual frente a la referencia sin IA fue mixta: menor en Kenia (43% frente a 51%), mayor en Brasil
+  (61% frente a 53%).
+
+**Tercer lote (noviembre de 2026, mismo diseño, fuentes nuevas: ESS ronda 11, WVS ola 7, Barómetro Árabe ola IX, Pew
+ATP W169).**
+
+| Conjunto | Personas simuladas (3.6 Flash) | Pedir las proporciones (3.6 Flash) | Encuestados parecidos (sin IA) | La otra encuesta más parecida | Uniforme |
+|---|---|---|---|---|---|
+| ESS, Alemania | 5.1 | 3.6 | 1.8 | 28.5 | 33.9 |
+| ESS, Reino Unido | 10.6 | 8.1 | 1.6 | 28.6 | 31.1 |
+| WVS, Japón | 10.8 | 8.6 | 2.5 | ninguna cercana | 25.1 |
+| WVS, India | 14.6 | 10.1 | 1.8 | ninguna cercana | 14.6 |
+| Barómetro Árabe, Egipto | 16.9 | 16.0 | 1.5 | 8.0 | 21.5 |
+| Barómetro Árabe, Marruecos | 16.8 | 24.2 | 2.2 | 21.5 | 31.8 |
+| Pew W169, EE. UU. | 10.9 | 4.8 | 5.2 | 10.4 | 18.9 |
+
+Modelos más capaces en tres de los conjuntos (personas simuladas):
+
+| Conjunto | 3.6 Flash | 3.8 Flash | 3.1 Pro |
+|---|---|---|---|
+| ESS, Alemania | 5.1 | 4.1 | 4.4 |
+| Barómetro Árabe, Egipto | 16.9 | 16.2 | 14.9 |
+| Pew W169, EE. UU. | 10.9 | 11.6 | 11.5 |
+| Costo por conjunto | $0.10–0.13 | $0.11–0.14 | $0.66–0.80 |
+
+Error absoluto medio por pregunta, en puntos. Lo que muestra:
+
+- **Pedirle las proporciones al mismo modelo superó a las personas simuladas en seis de siete conjuntos** (media 10.8
+  frente a 12.2); solo en Marruecos ganaron las personas. El segundo lote comparó las personas del modelo más fuerte con
+  las proporciones del modelo *más barato*, lo que favorecía a las personas. Con el mismo modelo en ambos lados, las
+  personas simuladas todavía no aportan precisión en las proporciones de toda la población. Su valor está en subgrupos,
+  individuos y conversaciones, que las proporciones no dan.
+- **India: las personas simuladas no fueron mejores que el reparto uniforme** (14.6 frente a 14.6). Egipto y Marruecos
+  quedaron a 16–17 puntos. El ensanchamiento del 25% para países fuera de EE. UU. se queda corto ahí.
+- **Alemania fue el mejor resultado hasta ahora** (5.1, precisión individual 90%); Reino Unido y EE. UU., unos 11.
+- **Un modelo más capaz apenas ayudó**: 3.1 Pro fue 0–2 puntos mejor o algo peor, a seis o siete veces el costo, y
+  3.8 Flash quedó a la par de 3.6 Flash. Por debajo de Flash la calidad del modelo importó (segundo lote); por encima,
+  todavía no.
+- **La otra encuesta más parecida** fue mala en Europa (las preguntas de distintas encuestas casan mal) y no encontró
+  nada cercano para Japón ni India, pero fue buena en Egipto (8.0).
+- El error de opinión medido es ahora **de unos ±8.8 típicos y ±16.5 en el percentil 80** (206 preguntas), y los
+  resultados lo usan. Los rangos de error se cumplieron en 63–100% de las preguntas por conjunto (objetivo 80%); fueron
+  demasiado estrechos para Egipto y Marruecos.
+- Cada fila son 8 preguntas: toma cada número como aproximado. "Encuestados parecidos" usa a los propios encuestados de
+  la misma encuesta y es un tope, no un rival.
+- Las cifras medidas juntan todos los modelos probados. Las cifras por modelo son la siguiente mejora.
+
 **Medidas.**
 
 - **Error absoluto medio por pregunta**, en puntos, entre las opciones de respuesta.
