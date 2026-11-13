@@ -289,3 +289,15 @@ def test_harness_resume_skips_scored_items(monkeypatch):
     refs = sorted(r["item_ref"] for r in db.q("SELECT item_ref FROM harness_items WHERE run_id=?", rid))
     assert refs == ["i0", "i1", "i2", "i3"]          # i0 kept, not scored twice
     assert db.q1("SELECT status FROM harness_runs WHERE id=?", rid)["status"] == "done"
+
+
+def test_country_codes_use_the_files_own_labels():
+    """Arab Barometer numbers Jordan 8 and Syria 20; as ISO numbers those are Albania and Andorra."""
+    import pandas as pd
+    from types import SimpleNamespace
+    from zocalo.datasets import loaders
+    meta = SimpleNamespace(variable_value_labels={"COUNTRY": {8.0: "Jordan", 20.0: "Syria", 12.0: "Mauritania"}})
+    df = pd.DataFrame({"COUNTRY": [8.0, 20.0, 12.0]})
+    assert list(loaders._country_series("arab_barometer", df, meta, "COUNTRY")) == ["JO", "SY", "MR"]
+    unlabelled = SimpleNamespace(variable_value_labels={})  # bare ISO numbers still work
+    assert list(loaders._country_series("wvs", pd.DataFrame({"C": [484.0, 124.0]}), unlabelled, "C")) == ["MX", "CA"]

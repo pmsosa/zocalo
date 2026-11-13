@@ -292,6 +292,6 @@ Built in one pass: Phases 0–4 and 6, plus the Phase 7 import format and maths.
 Still open:
 - Done 2026-11-12: logo (Classic + one-dot small mark), icon set, README banner.
 - Phase 5 (fine-tuning) and a paid human panel (Phase 7) were not in scope.
-- WVS, ESS, Arab Barometer and Pew are manual downloads; nothing is tested on them yet.
+- WVS, ESS, Arab Barometer and Pew (W161–W169) are downloaded and indexed on this install (2026-11-12); no tests run on them yet.
 - Measured error needs more test runs (20+ items per question type) before it replaces the published priors.
 

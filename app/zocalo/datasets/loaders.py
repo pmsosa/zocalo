@@ -287,9 +287,12 @@ def _country_series(sid: str, df: pd.DataFrame, meta, ccol: str | None) -> pd.Se
     cache = {}
     for v in vals:
         if v not in cache:
-            a2 = C.to_a2(v if isinstance(v, str) else (int(v) if v == v and v is not None else None))
+            # The file's own label first: Afrobarometer and Arab Barometer number countries their own way, so
+            # code 8 is Jordan there, not ISO 008 (Albania). The bare code is the fallback for unlabelled files.
+            label = lab(v)
+            a2 = C.to_a2(label) if isinstance(label, str) else None
             if a2 is None:
-                a2 = C.to_a2(lab(v))
+                a2 = C.to_a2(v if isinstance(v, str) else (int(v) if v == v and v is not None else None))
             cache[v] = a2
         out.append(cache[v])
     return pd.Series(out, index=df.index)
