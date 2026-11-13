@@ -112,6 +112,10 @@ async def complete(kind: str, key: str, base_url: str | None, model: str, system
             # Thinking models spend output tokens on hidden reasoning; keep it minimal for role-play answers.
             if re.search(r"gemini-(2\.5|3)", model) and "pro" not in model:
                 body["generationConfig"]["thinkingConfig"] = {"thinkingBudget": 0}
+            elif "pro" in model:  # Pro can't switch thinking off: keep it low, and leave room for the answer
+                body["generationConfig"]["thinkingConfig"] = (
+                    {"thinkingLevel": "low"} if re.search(r"gemini-3", model) else {"thinkingBudget": 128})
+                body["generationConfig"]["maxOutputTokens"] = max_tokens + 4096
             r = await c.post(f"{base}/models/{model}:generateContent", json=body, headers={"x-goog-api-key": key})
             _raise_for(r)
             data = r.json()
