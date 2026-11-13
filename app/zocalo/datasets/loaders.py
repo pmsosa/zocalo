@@ -270,8 +270,8 @@ def _feather_cols(path: Path) -> list[str]:
         return f.schema.names
 
 
-def survey_frame(sid: str):
-    path = survey_file(sid)
+def survey_frame(sid: str, path: Path | None = None):
+    path = path or survey_file(sid)
     if not path:
         raise ValueError(f"{BY_ID[sid]['name']} isn't downloaded.")
     return _survey_frame(sid, str(path), path.stat().st_mtime)
@@ -668,11 +668,21 @@ def build_population(source: str, country: str, n: int, seed: int, options: dict
 
 
 # ---------- question index (anchors) ----------
-def _items_from_survey(sid: str, country_filter: str | None = None, max_items: int = 4000):
+def _survey_year(path: Path) -> int | None:
+    """The year in the file or folder name: "ESS11 2023.sav", or Pew's "W169_May25/ATP W169.sav"."""
+    for name in (path.name, path.parent.name):
+        m = re.search(r"(19|20)\d\d", name)
+        if m:
+            return int(m.group(0))
+    m = re.search(r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(\d\d)$", path.parent.name)
+    return 2000 + int(m.group(1)) if m else None
+
+
+def _items_from_survey(sid: str, country_filter: str | None = None, max_items: int = 4000, path: Path | None = None):
     """Every labelled categorical question with its real, weighted answer shares, per country."""
-    path = survey_file(sid)
+    path = path or survey_file(sid)
     meta = read_meta(path)
-    df, _, use, wcol, ccol, allcols = survey_frame(sid)
+    df, _, use, wcol, ccol, allcols = survey_frame(sid, path)
     labels = meta.column_names_to_labels or {}
     vls = meta.variable_value_labels or {}
     demo = {c for c in use.values() if isinstance(c, str)} | set(use.get("party_cols", []))
@@ -689,10 +699,7 @@ def _items_from_survey(sid: str, country_filter: str | None = None, max_items: i
         if 2 <= len(sub) <= 8:
             cands.append(c)
     cands = cands[:max_items]
-    year = None
-    m = re.search(r"(19|20)\d\d", path.name)
-    if m:
-        year = int(m.group(0))
+    year = _survey_year(path)
     countries = _country_series(sid, df, meta, ccol)
     weights = pd.to_numeric(df[wcol], errors="coerce").fillna(0).to_numpy() if wcol else np.ones(len(df))
     items = []
@@ -737,7 +744,10 @@ def _looks_ordered(options: list[str]) -> bool:
 def index_questions(sid: str) -> int:
     from ..calibration import add_anchors
     from .. import db
-    items = _items_from_survey(sid)
+    if sid == "pew_atp":  # every wave, not just the newest
+        items = [it for p in files(sid) for it in _items_from_survey(sid, path=p)]
+    else:
+        items = _items_from_survey(sid)
     db.ex("DELETE FROM anchors WHERE source=?", sid)
     return add_anchors(items)
 
