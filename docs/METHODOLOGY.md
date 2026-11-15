@@ -74,7 +74,9 @@ reason in their own voice for each answer they'd give at least a 10% chance.
 
 On the study page each dot is one person, placed at an answer drawn from their spread, so the dots add up to the
 shares. The reason shown is the one for that drawn answer. (Studies run before November 2026 kept only the reason for
-the likeliest answer; when the drawn answer differs, the page says whose reason it is.)
+the likeliest answer; when the drawn answer differs, the page says whose reason it is.) With "own words → options"
+the person gives one reply and the spread is the judge's doubt about which option it matches, so the dot goes to the
+best match and the reply is the reason.
 
 Why spreads rather than single answers: several studies found that asking a model for one answer per person makes
 everyone pick the same option. The spread of answers comes out far too narrow, and options real people choose never
@@ -138,7 +140,7 @@ Every number in Zócalo carries an error range, labelled with **what kind** of e
 
 | Label | Meaning |
 |---|---|
-| **measured in your tests** | The error for this type of question, measured by your own test runs (20+ questions of that type) |
+| **measured in your tests** | The error for this type of question, measured by your own test runs (20+ questions of that type) with the model the study used. If that model has fewer than 20 tested questions of the type, every model's tests are pooled and the result says so |
 | **estimate from published evaluations** | Until your tests cover a question type, figures from published evaluations |
 | **flat estimate** | The question type is "other": the overall error across types, not specific to this question |
 | **human-calibrated** | A real 95% confidence interval, because you added a real human sample (section 5) |
@@ -250,7 +252,8 @@ Mean absolute error per question, in points. What it shows:
   The stronger model's simulated people did better than both (8.2–8.5). Model quality matters more than method.
 - Individual accuracy against the no-AI baseline was mixed: lower in Kenya (43% vs 51%), higher in Brazil
   (61% vs 53%).
-- The measured figures pool every model tested. Per-model figures are the next improvement.
+- These figures pooled every model tested. Since November 2026 each result uses the error measured for its own
+  model, when that model has 20 or more tested questions of the type, and the model picker shows each model's figure.
 
 **Third batch (November 2026, same design, new sources: ESS Round 11, WVS Wave 7, Arab Barometer Wave IX, Pew ATP W169).**
 

@@ -157,6 +157,24 @@ def test_error_labels():
     assert errors.guess_qtype("Have you heard of ChatGPT?") == "knowledge"
 
 
+def test_error_uses_the_studys_own_model_when_tested_enough():
+    def run(model, n, err):
+        rid = db.ex("INSERT INTO harness_runs(testset,model_ref,method,status,created_at) VALUES('t',?,'population','done',?)",
+                    model, db.now())
+        for i in range(n):
+            db.ex("INSERT INTO harness_items(run_id,item_ref,qtype,real_json,sim_json,abs_error) VALUES(?,?,'behaviour','[]','[]',?)",
+                  rid, f"{model}-{i}", err)
+    run("m-good", 25, 5.0)
+    run("m-new", 10, 20.0)
+    own = errors.estimate("behaviour", False, 2000, False, models=["m-good"])
+    assert own["kind"] == "measured" and own["p50"] == 5.0 and own["tested_with"] == "model" and own["items"] == 25
+    few = errors.estimate("behaviour", False, 2000, False, models=["m-new"])   # too few of its own: every model's
+    assert few["items"] == 35 and few["tested_with"] == "all" and "model_untested" in few["warnings"]
+    assert errors.estimate("behaviour", False, 2000, False)["tested_with"] == "all"
+    assert errors.by_model()["m-good"]["behaviour"] == {"p50": 5.0, "p80": 5.0, "items": 25}
+    assert "behaviour" not in errors.by_model().get("m-new", {})
+
+
 def test_item_metrics():
     m = item_metrics([0.5, 0.5, 0.0], [0.6, 0.4, 0.0])
     assert m["mae"] == pytest.approx(20 / 3, abs=1e-6) and m["max"] == pytest.approx(10)
@@ -233,6 +251,28 @@ def test_full_study_flow_and_api():
         assert c.get("/api/studies").status_code == 401
         assert c.post("/api/auth/login", json={"username": "admin", "password": "longpassword"}).status_code == 200
         assert c.get("/api/studies").status_code == 200
+
+
+def test_own_words_dots_sit_on_the_best_match_with_the_reply_as_reason():
+    from zocalo.main import app
+    ref = _model_ref()
+    db.set_setting("auth_mode", "none")  # an earlier test turns sign-in on
+    pop = save_population("words", "US", "demo", demo.build("US", 30, 9), 9, {})
+    with TestClient(app) as c:
+        sid = c.post("/api/studies", json={"name": "w", "kind": "survey", "population_id": pop,
+                                           "questions": [{"text": "Is it good?", "options": ["Yes", "No"]}],
+                                           "config": {"models": [ref], "method": "words"}}).json()["id"]
+        c.post(f"/api/studies/{sid}/run", json={})
+        for _ in range(200):
+            time.sleep(0.05)
+            if c.get(f"/api/studies/{sid}").json()["status"] != "running":
+                break
+        res = c.post(f"/api/studies/{sid}/results", json={}).json()
+        qid = str(res["questions"][0]["id"])
+        for p in res["people"]:
+            a = p["answers"][qid]["main"]
+            assert a["pick"] == a["spread"].index(max(a["spread"])) and a["reason_for"] == a["pick"]
+            assert a["reason"] == "I'd say so, yes."
 
 
 def test_spa_and_static():

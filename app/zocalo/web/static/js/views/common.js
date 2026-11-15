@@ -14,8 +14,17 @@ const WARN = {
   subgroup: () => t("Subgroup: simulated subgroups tend to look more alike, and more stereotyped, than real ones. Treat as directional."),
   knowledge: () => t("Knowledge question: models answer these far too well (often 40+ points too high on “have you heard of…”)."),
   non_us: () => t("Outside the US: published tests are almost all US-based, so the error here is a wider guess until you test it."),
+  model_untested: () => t("This model hasn't been tested on enough questions of this kind yet, so the error comes from every model's tests. Run a test with it on the Tests page."),
   demo: () => t("Demo population: made-up people, not census records. For trying the app only."),
 };
+
+// what the error is based on, e.g. "opinion questions · 24 tested with this model"
+function basisText(err) {
+  if (err.kind !== "measured" || !err.tested_with) return err.basis;
+  const what = t(err.topical ? "{q} questions on recent events" : "{q} questions", { q: t(err.qtype) });
+  const who = { model: "{n} tested with this model", models: "{n} tested with these models", all: "{n} tested across all models" }[err.tested_with];
+  return `${what} · ${t(who, { n: err.items })}`;
+}
 
 export function errorNote(err, human) {
   if (human && human.share) {
@@ -30,7 +39,7 @@ export function errorNote(err, human) {
     err.kind === "flat"
       ? [h("b", t("Flat error: about ±{a} pts", { a: err.p50 })), h("span", t("No tested question type matches this one well, so this is the overall error: 1 in 5 times more than ±{b} pts.", { b: err.p80 }))]
       : [h("b", t("Usually within ±{a} pts", { a: err.p50 })), h("span", t("1 in 5 times more than ±{b} pts", { b: err.p80 }))],
-    h("span.mono", `${kind} · ${err.basis}`),
+    h("span.mono", `${kind} · ${basisText(err)}`),
     (err.warnings || []).map(w => WARN[w] ? h("div.warn", WARN[w]()) : null));
 }
 

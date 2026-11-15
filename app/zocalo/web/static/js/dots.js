@@ -213,7 +213,9 @@ export function createDots(stage, opts) {
   function clearBubbles() { bubbles.forEach(b => b.el.remove()); bubbles = []; }
   const bubbleTimer = setInterval(() => {
     if (!alive || layout !== "sphere" || tMix > .05 || drag || hover || document.hidden || !opts.quote) return;
-    const pool = people.filter(p => p._z > .55 && selected(p) && !bubbles.some(b => b.p === p) && opts.quote(p));
+    // only dots well clear of the bubbles already showing (they drift with the sphere, so leave room)
+    const clear = p => bubbles.every(b => Math.abs(b.p._x - p._x) > 280 || Math.abs(b.p._y - p._y) > 190);
+    const pool = people.filter(p => p._z > .55 && selected(p) && clear(p) && opts.quote(p));
     if (!pool.length) return;
     const p = pool[Math.floor(Math.random() * pool.length)];
     const q = opts.quote(p); const k = catOf(p);

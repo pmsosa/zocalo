@@ -223,9 +223,10 @@ async function renderResults(st, v) {
         h("div.scroll-x", tableBox), h("p.small.muted", t("Simulated groups tend to differ more from each other than real groups do (gaps 2–4× too large in one study). Read differences between groups as direction, not size."))));
       drawTable();
     }
-    if (qq.anchors?.length) {
+    const near = (qq.anchors || []).filter(a => a.closeness !== "distant");  // a distant match is just shared words
+    if (near.length) {
       extra.append(h("div.card", h("h3", t("Closest real polls")), h("p.small.muted", t("Real questions from your downloaded surveys that look most like this one. Compare by eye: they aren't the same question.")),
-        qq.anchors.map(a => h("div", { style: { padding: "8px 0", borderTop: "1px solid var(--mist)" } },
+        near.map(a => h("div", { style: { padding: "8px 0", borderTop: "1px solid var(--mist)" } },
           h("div.small", `“${a.text}”`), h("div.mono", `${a.source} ${a.year || ""} · ${a.country || ""} · ${t("similarity")} ${a.similarity}`),
           h("div.bars-mini", { style: { marginTop: "6px", maxWidth: "320px" } }, a.dist.map((x, i) => h("i", { title: `${a.options[i]}: ${pct(x)}`, style: { width: `${x * 100}%`, background: palette(a.options.length, false)[i] } })))))));
     }

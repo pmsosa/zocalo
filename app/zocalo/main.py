@@ -555,8 +555,13 @@ async def human_sample(sid: int, qid: int, file: UploadFile):
 
 @app.get("/api/errors/preview")
 def error_preview(qtype: str = "opinion", topical: bool = False, n: int = 2000, subgroup: bool = False,
-                  country: str = "US", demo: bool = False):
-    return errors.estimate(qtype, topical, n, subgroup, country, demo)
+                  country: str = "US", demo: bool = False, models: str = ""):
+    return errors.estimate(qtype, topical, n, subgroup, country, demo, [m for m in models.split(",") if m] or None)
+
+
+@app.get("/api/errors/models")
+def error_by_model():
+    return errors.by_model()
 
 
 @app.get("/api/errors/guess")

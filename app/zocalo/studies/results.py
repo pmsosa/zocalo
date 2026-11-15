@@ -70,6 +70,7 @@ def compute(study_id: int, flt: dict | None = None, lang: str = "en") -> dict:
         by_q[r["question_id"]].append(r)
     fails = db.q1("SELECT COUNT(*) AS n FROM answers WHERE study_id=? AND ok=0", study_id)["n"]
     models = sorted({r["model_ref"] for r in rows})
+    words = (study.get("config") or {}).get("method") == "words"
     out_q = []
     for q in study["questions"]:
         n_opts = len(q["options"])
@@ -81,7 +82,10 @@ def compute(study_id: int, flt: dict | None = None, lang: str = "en") -> dict:
         merged = []
         for (pid, arm), rs in per_person_arm.items():
             spread = np.mean([x["spread"] for x in rs], axis=0).tolist()
-            pick = _sampled_choice(spread, (study_id, q["id"], pid, arm))
+            # "own words": the person said one thing and the spread is the judge's doubt about which option it
+            # matches, so the dot goes to the best match; with stated probabilities it's a draw from their spread
+            pick = (max(range(n_opts), key=spread.__getitem__) if words
+                    else _sampled_choice(spread, (study_id, q["id"], pid, arm)))
             reason, reason_for = _reason_for(pick, rs)
             merged.append({"person_id": pid, "arm": arm, "spread": spread, "weight": rs[0]["weight"],
                            "pick": pick, "reason": reason})
@@ -104,7 +108,7 @@ def compute(study_id: int, flt: dict | None = None, lang: str = "en") -> dict:
             arm_res[arm] = {
                 "share": [round(float(x), 4) for x in share], "n": len(ar), "picks": picks.tolist(),
                 "per_model": per_model,
-                "error": errors.estimate(q["qtype"], bool(q["topical"]), len(ar), is_sub, country, demo, len(models)),
+                "error": errors.estimate(q["qtype"], bool(q["topical"]), len(ar), is_sub, country, demo, models),
             }
         main_arm = "main" if "main" in arm_res else ("A" if "A" in arm_res else ("treatment" if "treatment" in arm_res else (arms[0] if arms else None)))
         checks = {}
@@ -137,7 +141,7 @@ def compute(study_id: int, flt: dict | None = None, lang: str = "en") -> dict:
                         groups[v].append(m)
                 if 1 < len(groups) <= 30:
                     subgroups[f] = sorted([{"value": v, "n": len(g), "share": [round(float(x), 4) for x in _share(g, n_opts)],
-                                            "error": errors.estimate(q["qtype"], bool(q["topical"]), len(g), True, country, demo)["p50"]}
+                                            "error": errors.estimate(q["qtype"], bool(q["topical"]), len(g), True, country, demo, models)["p50"]}
                                            for v, g in groups.items()], key=lambda d: -d["n"])
         out_q.append({"id": q["id"], "text": q["text"], "text_b": q["meta"].get("text_b"), "options": q["options"],
                       "qtype": q["qtype"], "topical": bool(q["topical"]), "ordered": q["meta"].get("ordered", False),

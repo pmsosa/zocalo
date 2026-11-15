@@ -162,7 +162,7 @@ async def ask(model_ref: str, record: dict, asked: Asked, *, method: str = "spre
                       {"method": "words"}, {top: reply})
     user = SPREAD_INSTRUCTIONS.format(context=ctx, question=asked.text, options=_options_block(asked)) + lang_note
     turns = (history or []) + [{"role": "user", "content": user}]
-    comp, m = await providers.complete_ref(model_ref, system, turns, max_tokens=600, temperature=temperature)
+    comp, m = await providers.complete_ref(model_ref, system, turns, max_tokens=800, temperature=temperature)
     data = providers.parse_json(comp.text)
     spread = _normalise(data.get("probabilities") or data.get("probs") or {}, asked)
     idx = _letter_to_canon(str(data.get("answer", "")), asked)

@@ -13,7 +13,8 @@ const QTYPES = () => [["opinion", t("Opinion")], ["behaviour", t("Behaviour")], 
 
 export async function render(_, v) {
   const params = new URLSearchParams(location.hash.split("?")[1] || "");
-  const [pops, models, panels] = await Promise.all([GET("/api/populations"), GET("/api/models"), GET("/api/panels")]);
+  const [pops, models, panels, tested] = await Promise.all([GET("/api/populations"), GET("/api/models"), GET("/api/panels"),
+    GET("/api/errors/models").catch(() => ({}))]);
   const enabled = models.models.filter(m => m.enabled);
   v.append(h("div.page-head", h("h1", t("New study"), h("br"), h("span", t("Who, what, and with which models.")))));
   if (!pops.populations.length || !enabled.length) {
@@ -104,7 +105,8 @@ export async function render(_, v) {
           if (!q.text.trim()) return;
           const g = await GET(`/api/errors/guess?text=${encodeURIComponent(q.text)}`);
           if (!q.qtype) type.value = g.qtype;
-          anchors.textContent = g.anchors.length ? t("Closest real poll: “{q}” ({s} {y})", { q: g.anchors[0].text.slice(0, 90), s: g.anchors[0].source, y: g.anchors[0].year || "" }) : "";
+          const near = g.anchors.filter(a => a.closeness !== "distant");  // a distant match is just shared words
+          anchors.textContent = near.length ? t("Closest real poll: “{q}” ({s} {y})", { q: near[0].text.slice(0, 90), s: near[0].source, y: near[0].year || "" }) : "";
         }, 400);
       }
       if (q.qtype) type.value = q.qtype; else if (q.text) guessType();
@@ -132,7 +134,8 @@ export async function render(_, v) {
     const cb = h("input", { type: "checkbox", checked: S.models.includes(String(m.id)), onchange: () => {
       S.models = cb.checked ? [...new Set([...S.models, String(m.id)])] : S.models.filter(x => x !== String(m.id)); } });
     modelBox.append(h("label.tog", cb, h("span", `${m.provider_label} · ${m.label}`,
-      h("small", m.price_in == null ? t("price unknown: set it in Settings for a real estimate") : t("${a} in · ${b} out per million tokens", { a: m.price_in, b: m.price_out })))));
+      h("small", m.price_in == null ? t("price unknown: set it in Settings for a real estimate") : t("${a} in · ${b} out per million tokens", { a: m.price_in, b: m.price_out })),
+      h("small", modelError(tested[String(m.id)])))));
   });
   const method = segmented(t("answers"), [["spread", t("stated probabilities")], ["words", t("own words → options")]], S.method, k => S.method = k);
 
@@ -164,4 +167,11 @@ export async function render(_, v) {
   const preQ = params.get("q");
   addQuestion(preQ || "", [t("Yes"), t("No")]);
   await loadPeople();
+}
+
+// how far off this model was in this install's own tests (opinion questions, the type tested most)
+function modelError(e) {
+  const o = e?.opinion;
+  return o ? t("In your tests: usually within ±{a} pts on opinion questions ({n} tested)", { a: o.p50, n: o.items })
+    : t("Not tested yet: run it on the Tests page to see how far off it is");
 }

@@ -53,14 +53,42 @@ def guess_qtype(text: str) -> str:
     return "opinion"
 
 
-def _measured(qtype: str, topical: int) -> tuple[float, float, int, float | None] | None:
-    rows = db.q("SELECT hi.abs_error, hi.meta_json FROM harness_items hi JOIN harness_runs hr ON hr.id=hi.run_id "
+def _tested(qtype: str, topical: int, models: list[str] | None = None) -> np.ndarray:
+    """Absolute errors from this install's finished population tests, optionally only for some models."""
+    rows = db.q("SELECT hi.abs_error, hi.meta_json, hr.model_ref FROM harness_items hi JOIN harness_runs hr ON hr.id=hi.run_id "
                 "WHERE hr.status='done' AND hr.method='population' AND hi.qtype=? AND hi.subgroup IS NULL "
                 "AND hi.abs_error IS NOT NULL", qtype)
-    errs = np.array([r["abs_error"] for r in rows if (db.loads(r["meta_json"], {}).get("topical", 0) == topical)])
+    return np.array([r["abs_error"] for r in rows if (db.loads(r["meta_json"], {}).get("topical", 0) == topical)
+                     and (models is None or r["model_ref"] in models)])
+
+
+def _measured(qtype: str, topical: int, models: list[str] | None = None) -> tuple[float, float, int, bool] | None:
+    """(p50, p80, items, own) from the study's own models when they have enough tested items, else from every
+    model's tests (own=False); None when even that is too few."""
+    if models:
+        errs = _tested(qtype, topical, [str(m) for m in models])
+        if len(errs) >= MIN_ITEMS:
+            return float(np.percentile(errs, 50)), float(np.percentile(errs, 80)), len(errs), True
+    errs = _tested(qtype, topical)
     if len(errs) < MIN_ITEMS:
         return None
-    return float(np.percentile(errs, 50)), float(np.percentile(errs, 80)), len(errs), None
+    return float(np.percentile(errs, 50)), float(np.percentile(errs, 80)), len(errs), not models
+
+
+def by_model() -> dict[str, dict]:
+    """Each tested model's own measured error per question type, for the model picker and the Tests page."""
+    rows = db.q("SELECT DISTINCT hr.model_ref FROM harness_runs hr WHERE hr.status='done' AND hr.method='population'")
+    out: dict[str, dict] = {}
+    for r in rows:
+        ref = r["model_ref"]
+        for qtype in QTYPES[:-1]:
+            for t in (0, 1):
+                errs = _tested(qtype, t, [ref])
+                if len(errs) >= MIN_ITEMS:
+                    out.setdefault(ref, {})[f"{qtype}{'_topical' if t else ''}"] = {
+                        "p50": round(float(np.percentile(errs, 50)), 1), "p80": round(float(np.percentile(errs, 80)), 1),
+                        "items": len(errs)}
+    return out
 
 
 def subgroup_factor(n_people: int, is_subgroup: bool) -> float:
@@ -73,18 +101,23 @@ def subgroup_factor(n_people: int, is_subgroup: bool) -> float:
 
 
 def estimate(qtype: str, topical: bool, n_people: int, is_subgroup: bool, country: str = "US",
-             demo: bool = False, n_models: int = 1) -> dict:
+             demo: bool = False, models: list[str] | None = None) -> dict:
+    """models: the model refs whose answers make up the result; their own tests are used when there are enough."""
     qtype = qtype if qtype in QTYPES else "other"
     t = int(bool(topical))
-    warnings = []
+    warnings: list[str] = []
     kind, basis = "flat", "overall error across question types"
     p50, p80 = FLAT
-    n_items = None
+    n_items, who = None, None
     if qtype != "other":
-        m = _measured(qtype, t)
+        m = _measured(qtype, t, models)
         if m:
-            p50, p80, n_items, _ = m
-            kind, basis = "measured", f"{qtype}{', topical' if t else ''} questions ({n_items} tested)"
+            p50, p80, n_items, own = m
+            who = ("model" if len(models) == 1 else "models") if models and own else "all"
+            kind, basis = "measured", f"{qtype}{', topical' if t else ''} questions ({n_items} tested, " \
+                f"{ {'model': 'this model', 'models': 'these models', 'all': 'all models'}[who]})"
+            if models and not own:
+                warnings.append("model_untested")
         else:
             p50, p80 = PRIORS[(qtype, t)]
             kind, basis = "prior", f"{qtype}{', topical' if t else ''} questions"
@@ -99,4 +132,4 @@ def estimate(qtype: str, topical: bool, n_people: int, is_subgroup: bool, countr
     if demo:
         warnings.append("demo")
     return {"kind": kind, "p50": round(p50 * f, 1), "p80": round(p80 * f, 1), "basis": basis,
-            "qtype": qtype, "topical": bool(t), "items": n_items, "warnings": warnings}
+            "qtype": qtype, "topical": bool(t), "items": n_items, "tested_with": who, "warnings": warnings}

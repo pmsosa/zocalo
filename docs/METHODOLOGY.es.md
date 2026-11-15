@@ -77,7 +77,9 @@ de una línea con su propia voz para cada respuesta a la que da al menos un 10% 
 En la página del estudio cada punto es una persona, ubicada en una respuesta sorteada según su distribución, para que
 los puntos sumen las proporciones. La razón que se muestra es la de esa respuesta sorteada. (Los estudios hechos antes
 de noviembre de 2026 solo guardaban la razón de la respuesta más probable; cuando la respuesta sorteada es otra, la
-página dice de qué respuesta es la razón.)
+página dice de qué respuesta es la razón.) Con "palabras propias → opciones" la persona da una sola respuesta y la
+distribución es la duda del juez sobre a qué opción corresponde, así que el punto va a la que mejor corresponde y la
+respuesta es la razón.
 
 Por qué distribuciones y no respuestas únicas: varios estudios encontraron que pedirle al modelo una respuesta por
 persona hace que todos elijan la misma opción. La dispersión de respuestas sale demasiado estrecha, y las opciones que
@@ -150,7 +152,7 @@ Cada número en Zócalo lleva un rango de error, etiquetado con **qué tipo** de
 
 | Etiqueta | Significado |
 |---|---|
-| **medido en tus pruebas** | El error para este tipo de pregunta, medido por tus propias corridas de prueba (20+ preguntas de ese tipo) |
+| **medido en tus pruebas** | El error para este tipo de pregunta, medido por tus propias corridas de prueba (20+ preguntas de ese tipo) con el modelo que usó el estudio. Si ese modelo tiene menos de 20 preguntas probadas de ese tipo, se juntan las pruebas de todos los modelos y el resultado lo dice |
 | **estimación de evaluaciones publicadas** | Hasta que tus pruebas cubran un tipo de pregunta, cifras de evaluaciones publicadas |
 | **estimación fija** | El tipo de pregunta es "otra": el error general entre tipos, no específico de esta pregunta |
 | **calibrado con humanos** | Un intervalo de confianza real del 95%, porque agregaste una muestra humana real (sección 5) |
@@ -307,7 +309,8 @@ Error absoluto medio por pregunta, en puntos. Lo que muestra:
   demasiado estrechos para Egipto y Marruecos.
 - Cada fila son 8 preguntas: toma cada número como aproximado. "Encuestados parecidos" usa a los propios encuestados de
   la misma encuesta y es un tope, no un rival.
-- Las cifras medidas juntan todos los modelos probados. Las cifras por modelo son la siguiente mejora.
+- Estas cifras juntaban todos los modelos probados. Desde noviembre de 2026 cada resultado usa el error medido para su
+  propio modelo, cuando ese modelo tiene 20 o más preguntas probadas de ese tipo, y el selector de modelos muestra la cifra de cada uno.
 
 **Medidas.**
 

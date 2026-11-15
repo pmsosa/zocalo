@@ -1,4 +1,12 @@
 {
+  "{q} questions": "preguntas de {q}",
+  "{q} questions on recent events": "preguntas de {q} sobre hechos recientes",
+  "{n} tested with this model": "{n} probadas con este modelo",
+  "{n} tested with these models": "{n} probadas con estos modelos",
+  "{n} tested across all models": "{n} probadas entre todos los modelos",
+  "This model hasn't been tested on enough questions of this kind yet, so the error comes from every model's tests. Run a test with it on the Tests page.": "Este modelo todavía no se ha probado con suficientes preguntas de este tipo, así que el error sale de las pruebas de todos los modelos. Pruébalo en la página Pruebas.",
+  "In your tests: usually within ±{a} pts on opinion questions ({n} tested)": "En tus pruebas: suele quedar a ±{a} pts en preguntas de opinión ({n} probadas)",
+  "Not tested yet: run it on the Tests page to see how far off it is": "Sin probar todavía: pruébalo en la página Pruebas para ver qué tanto se equivoca",
   "Not recorded": "Sin dato",
   "Why they lean to {o}:": "Por qué se inclinan por {o}:",
   "$ in / M": "$ entrada / M",

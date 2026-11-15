@@ -219,7 +219,8 @@ async def _run(rid: int, cfg: dict) -> None:
                 total_cost += c
             met = item_metrics(item["real"], sim)
             est = errors.estimate(item.get("qtype", "opinion"), item.get("topical", False), len(item.get("people") or [1] * 1000),
-                                  False, item.get("country") or "US")
+                                  False, item.get("country") or "US",
+                                  models=[str(cfg["model"])] if cfg.get("model") else None)
             meta = {"cost": round(total_cost - cost_before, 6), "max": met["max"], "tvd": met["tvd"], "missed": met["missed"], "spread_ratio": _spread_ratio(item["real"], sim)
                     if item.get("ordered") else None, "topical": int(bool(item.get("topical"))), "text": item["text"],
                     "options": item["options"], "country": item.get("country"), "predicted_p80": est["p80"]}
