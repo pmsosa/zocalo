@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/METHODOLOGY.md"><img src="docs/images/zocalo-explore.jpg" alt="A sphere of 300 simulated people as dots, coloured by answer, with two speech bubbles quoting individual people's reasons, next to a results card showing 10% yes, 76% no and 14% not sure with error ranges" width="85%"></a><br>
+  <a href="docs/METHODOLOGY.md"><img src="docs/images/zocalo-explore.jpg" alt="A sphere of 300 simulated people as dots, coloured by answer, with three speech bubbles quoting individual people's reasons, next to a results card showing 14% yes, 66% no and 19% not sure with error ranges" width="85%"></a><br>
   <sub><i>Explore mode: answers pop up as the population turns. The card on the left says how far off these numbers usually are.</i></sub>
 </p>
 
@@ -42,14 +42,14 @@ Taken from a throw-away demo with made-up people (the built-in demo population),
 <table>
 <tr>
 <td width="50%" valign="top">
-<a href="docs/METHODOLOGY.md#4-how-error-is-estimated-and-shown"><img src="docs/images/zocalo-results.jpg" alt="A study's results: bars for yes, no and not sure with error whiskers, a note saying usually within 12 points, and the 300 respondents as dots grouped into one cluster per answer" width="100%"></a><br>
+<a href="docs/METHODOLOGY.md#4-how-error-is-estimated-and-shown"><img src="docs/images/zocalo-results.jpg" alt="A study's results for whether AI will do more good than harm: bars with error whiskers, a note saying usually within 7 points as measured in this install's tests with this model, and the 300 respondents as dots grouped into one cluster per answer" width="100%"></a><br>
 <b>Results with labelled error</b><br>
-<sub>Every share comes with how far off it usually is, and what kind of estimate that is. Each cluster of dots is the people who gave that answer.</sub>
+<sub>Every share comes with how far off it usually is, measured for the model you used, and what kind of estimate that is. Each cluster of dots is the people who gave that answer.</sub>
 </td>
 <td width="50%" valign="top">
 <a href="docs/METHODOLOGY.md#3-kinds-of-study"><img src="docs/images/zocalo-news-test.jpg" alt="A news test: results for the treatment group, then effect bars for treatment minus placebo, placebo minus control, and same person after minus before" width="100%"></a><br>
 <b>News tests with a placebo</b><br>
-<sub>The effect is treatment minus placebo, never the raw change. Here the real effect is about 1 point, while asking the same person twice moves 18.</sub>
+<sub>The effect is treatment minus placebo, never the raw change. Here the news itself moves answers about 5 points, while asking the same person twice moves 17.</sub>
 </td>
 </tr>
 <tr>
@@ -59,7 +59,7 @@ Taken from a throw-away demo with made-up people (the built-in demo population),
 <sub>Click a dot to see why that person answered as they did, and ask follow-ups. Every conversation runs on its own branch, so their record never changes.</sub>
 </td>
 <td width="50%" valign="top">
-<a href="docs/METHODOLOGY.md#1-who-the-people-are"><img src="docs/images/zocalo-population.jpg" alt="A population of 2,000 dots split into clusters by party, with filters for sex, region, party, education and age on the left" width="100%"></a><br>
+<a href="docs/METHODOLOGY.md#1-who-the-people-are"><img src="docs/images/zocalo-population.jpg" alt="A population of 1,000 dots split into clusters by party, with filters for sex, region, party, education and age on the left" width="100%"></a><br>
 <b>Populations from real records</b><br>
 <sub>US, UK and Canadian census records, or real survey respondents in over 100 countries, drawn by their official weights. Filter, then ask just those people.</sub>
 </td>
@@ -78,9 +78,9 @@ Taken from a throw-away demo with made-up people (the built-in demo population),
 </tr>
 <tr>
 <td width="50%" valign="top">
-<a href="docs/METHODOLOGY.md#3-kinds-of-study"><img src="docs/images/zocalo-new-study.jpg" alt="The new study form set to a news test, with fields for the news and a placebo, and options for a same-person group and telling the model it's an experiment" width="100%"></a><br>
+<a href="docs/METHODOLOGY.md#3-kinds-of-study"><img src="docs/images/zocalo-new-study.jpg" alt="The new study form: a question about product reviews with its question type, and four models, each with its price and how far off it was in this install's tests" width="100%"></a><br>
 <b>Surveys, A/B and news tests</b><br>
-<sub>Pick who to ask, write the questions, choose one or more models and see the cost before anything runs.</sub>
+<sub>Pick who to ask, write the questions, choose one or more models (each shows how far off it was in your tests) and see the cost before anything runs.</sub>
 </td>
 <td width="50%" valign="top">
 <a href="docs/METHODOLOGY.md"><img src="docs/images/zocalo-methodology.jpg" alt="The Methodology page, starting with the honest benchmark: Pew's 2026 digital twins were 12.4 points off on average" width="100%"></a><br>
@@ -95,7 +95,7 @@ Taken from a throw-away demo with made-up people (the built-in demo population),
 - **Populations from real data** - US Census ACS records with attitudes matched from CES or GSS; UK and Canada census records; real respondents from WVS, ESS, Afrobarometer, Latinobarómetro, Arab Barometer and Pew; a demo population for trying it out
 - **Facts only** - the model sees a person's facts and their own past answers, never an invented backstory, and never their name
 - **Stated probabilities** - each person gives a probability for every option; options are shuffled per person and "Not sure" is always offered
-- **Labelled error on every number** - measured in your tests, from published evaluations, or flat, and never a textbook margin of error
+- **Labelled error on every number** - measured in your tests for the model you used, from published evaluations, or flat, and never a textbook margin of error
 - **Surveys, A/B tests and news tests** - matched groups; news tests have a placebo arm and an optional same-person group
 - **Talk to anyone** - interviews, focus groups and debates on branches that never change the person's record; drift checks
 - **Closest real polls** - downloaded surveys are indexed, and each question shows the most similar real questions with their real answers
