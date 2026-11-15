@@ -55,6 +55,9 @@ export function diffBars(options, diff, label) {
   })));
 }
 
+// The reason shown is for the answer they gave; older studies only kept the reason for their likeliest answer.
+export const reasonMatches = a => a.reason_for == null || a.reason_for === a.pick;
+
 export function personTip(p, q) {
   const f = p.f || {};
   const box = h("div",
@@ -69,7 +72,8 @@ export function personTip(p, q) {
       box.append(h("dl.kv", h("dt", t("Answer")), h("dd", h("b", { style: { fontWeight: 500 } }, q.options[arm.pick]))),
         h("div.spreadbar", arm.spread.map((v, i) => h("i", { style: { width: `${v * 100}%`, background: cols[i] } }))),
         h("dl.kv", { style: { color: "var(--iron)" } }, arm.spread.map((v, i) => [h("dt", q.options[i]), h("dd", pct(v))])),
-        arm.reason ? h("div.small.muted", { style: { marginTop: "6px" } }, `“${arm.reason}”`) : null);
+        arm.reason ? h("div.small.muted", { style: { marginTop: "6px" } },
+          reasonMatches(arm) ? `“${arm.reason}”` : `${t("Why they lean to {o}:", { o: q.options[arm.reason_for] })} “${arm.reason}”`) : null);
     }
   }
   box.append(h("div.mono", { style: { marginTop: "8px" } }, t("click to open")));

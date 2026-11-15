@@ -40,8 +40,10 @@ Options:
 {options}
 
 How likely is this person to choose each option? Give a probability for every option letter (they sum to 1),
-then the single option they would most likely pick, then one short sentence in their own voice explaining it.
-Reply with JSON only: {{"probabilities": {{"A": 0.0, ...}}, "answer": "A", "reason": "..."}}"""
+then the single option they would most likely pick. Then, for every option you gave 0.1 or more (always
+including that pick), one short sentence in their own voice saying why they would choose it, as if it were
+their answer.
+Reply with JSON only: {{"probabilities": {{"A": 0.0, ...}}, "answer": "A", "reasons": {{"A": "...", ...}}}}"""
 
 WORDS_INSTRUCTIONS = """{context}Question: {question}
 
@@ -74,12 +76,13 @@ class Asked:
 class Answer:
     spread: list[float]         # canonical order
     answer_idx: int
-    reason: str
+    reason: str                 # why they'd give answer_idx
     tokens_in: int = 0
     tokens_out: int = 0
     cost: float = 0.0
     prompt_hash: str = ""
     extra: dict = field(default_factory=dict)
+    reasons: dict[int, str] = field(default_factory=dict)   # canonical index -> why they'd give that answer
 
 
 def with_unsure(options: list[str], lang: str = "en") -> list[str]:
@@ -154,18 +157,36 @@ async def ask(model_ref: str, record: dict, asked: Asked, *, method: str = "spre
         comp2, _ = await providers.complete_ref(model_ref, JUDGE_SYSTEM, judge, max_tokens=200, temperature=0)
         spread = _normalise(providers.parse_json(comp2.text).get("probabilities", {}), asked)
         tin, tout = comp.tokens_in + comp2.tokens_in, comp.tokens_out + comp2.tokens_out
-        return Answer(spread, max(range(len(spread)), key=spread.__getitem__), reply, tin, tout,
-                      providers.cost_of(m, tin, tout), _hash(system, user), {"method": "words"})
+        top = max(range(len(spread)), key=spread.__getitem__)
+        return Answer(spread, top, reply, tin, tout, providers.cost_of(m, tin, tout), _hash(system, user),
+                      {"method": "words"}, {top: reply})
     user = SPREAD_INSTRUCTIONS.format(context=ctx, question=asked.text, options=_options_block(asked)) + lang_note
     turns = (history or []) + [{"role": "user", "content": user}]
-    comp, m = await providers.complete_ref(model_ref, system, turns, max_tokens=400, temperature=temperature)
+    comp, m = await providers.complete_ref(model_ref, system, turns, max_tokens=600, temperature=temperature)
     data = providers.parse_json(comp.text)
     spread = _normalise(data.get("probabilities") or data.get("probs") or {}, asked)
     idx = _letter_to_canon(str(data.get("answer", "")), asked)
     if idx is None:
         idx = max(range(len(spread)), key=spread.__getitem__)
-    return Answer(spread, idx, str(data.get("reason", ""))[:400], comp.tokens_in, comp.tokens_out,
-                  providers.cost_of(m, comp.tokens_in, comp.tokens_out), _hash(system, user), {"method": "spread"})
+    reasons = _reasons(data, asked)
+    reason = reasons.get(idx) or str(data.get("reason", ""))[:400]
+    if reason:
+        reasons.setdefault(idx, reason)
+    return Answer(spread, idx, reason, comp.tokens_in, comp.tokens_out,
+                  providers.cost_of(m, comp.tokens_in, comp.tokens_out), _hash(system, user), {"method": "spread"},
+                  reasons)
+
+
+def _reasons(data: dict, asked: Asked) -> dict[int, str]:
+    """The per-option reasons, keyed by canonical option index."""
+    raw = data.get("reasons")
+    out: dict[int, str] = {}
+    if isinstance(raw, dict):
+        for letter, text in raw.items():
+            ci = _letter_to_canon(str(letter), asked)
+            if ci is not None and isinstance(text, str) and text.strip():
+                out[ci] = text.strip()[:400]
+    return out
 
 
 def _hash(system: str, user: str) -> str:
@@ -175,9 +196,9 @@ def _hash(system: str, user: str) -> str:
 def estimate_tokens(record: dict, question: str, options: list[str], method: str = "spread") -> tuple[int, int]:
     """Rough token counts for cost estimates: about 4 characters per token."""
     chars = len(SYSTEM) + len(profile_text(record)) + len(SPREAD_INSTRUCTIONS) + len(question) + sum(len(o) + 4 for o in options)
-    tin, tout = chars // 4 + 20, 90 + 12 * len(options)
+    tin, tout = chars // 4 + 20, 110 + 15 * len(options)   # a short reason for each likely answer (measured ~160)
     if method == "words":
-        tin, tout = tin * 2, tout + 80
+        tin, tout = tin * 2, 170 + 12 * len(options)
     return tin, tout
 
 

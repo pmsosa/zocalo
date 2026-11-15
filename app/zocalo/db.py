@@ -124,9 +124,16 @@ def tx() -> Iterator[sqlite3.Connection]:
         con.close()
 
 
+# columns added after the first release: (table, column, type)
+ADDED_COLUMNS = [("answers", "reasons_json", "TEXT")]
+
+
 def init() -> None:
     with tx() as con:
         con.executescript(SCHEMA)
+        for table, col, typ in ADDED_COLUMNS:
+            if col not in {r["name"] for r in con.execute(f"PRAGMA table_info({table})")}:
+                con.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
 
 
 def q(sql: str, *args: Any) -> list[dict]:

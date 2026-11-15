@@ -4,7 +4,7 @@ import { t, lang } from "../i18n.js";
 import { h, GET, POST, DEL, api, handle, toast, palette, money, num, pct, progressBar, statusTag, confirmBox, twoTone, UI } from "../ui.js";
 import { onCleanup } from "../app.js";
 import { createDots } from "../dots.js";
-import { bars, diffBars, errorNote, howMade, personTip, filterEditor, matches, describe, legend, segmented, FIELD_LABEL, SEX, ageBand, AGE_ORDER } from "./common.js";
+import { bars, diffBars, errorNote, howMade, personTip, reasonMatches, filterEditor, matches, describe, legend, segmented, FIELD_LABEL, SEX, ageBand, AGE_ORDER } from "./common.js";
 import { kindLabel } from "./home.js";
 import { openPersonDrawer } from "./people.js";
 
@@ -86,7 +86,7 @@ async function renderResults(st, v) {
   const dots = createDots(stage, {
     tip: p => personTip(p, { ...q(), arm }),
     onClick: p => openPersonDrawer(p.id, { study: res.study, question: q(), arm, answer: p.answers?.[q().id]?.[arm], models: res.models }),
-    quote: p => { const a = p.answers?.[q().id]?.[arm]; return a?.reason ? { text: a.reason, who: `${p.name.split(" ")[0]}, ${p.f.age ?? ""} · ${p.f.region || p.f.country || ""}` } : null; },
+    quote: p => { const a = p.answers?.[q().id]?.[arm]; return a?.reason && reasonMatches(a) ? { text: a.reason, who: `${p.name.split(" ")[0]}, ${p.f.age ?? ""} · ${p.f.region || p.f.country || ""}` } : null; },
     groupNote: ps => colorBy === "answer" && layout !== "answer" ? `${Math.round(ps.reduce((s, p) => s + (p.answers?.[q().id]?.[arm]?.spread?.[0] || 0), 0) / Math.max(ps.length, 1) * 100)}% ${q().options[0].toLowerCase()}` : "",
   });
   onCleanup(() => dots.destroy());

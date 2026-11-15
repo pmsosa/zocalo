@@ -72,7 +72,12 @@ siguiente, y una persona a la que entrevistaste no lleva esa conversación a su 
 
 Para cada pregunta, cada persona recibe una llamada al modelo. La llamada contiene los datos de la persona, la pregunta y
 las opciones. **La persona da una probabilidad para cada opción** ("60% sí, 30% no, 10% no estoy seguro/a") y una razón
-de una línea con su propia voz.
+de una línea con su propia voz para cada respuesta a la que da al menos un 10% de probabilidad.
+
+En la página del estudio cada punto es una persona, ubicada en una respuesta sorteada según su distribución, para que
+los puntos sumen las proporciones. La razón que se muestra es la de esa respuesta sorteada. (Los estudios hechos antes
+de noviembre de 2026 solo guardaban la razón de la respuesta más probable; cuando la respuesta sorteada es otra, la
+página dice de qué respuesta es la razón.)
 
 Por qué distribuciones y no respuestas únicas: varios estudios encontraron que pedirle al modelo una respuesta por
 persona hace que todos elijan la misma opción. La dispersión de respuestas sale demasiado estrecha, y las opciones que

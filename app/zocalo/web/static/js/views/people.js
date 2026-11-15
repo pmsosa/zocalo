@@ -2,7 +2,7 @@
 import { t } from "../i18n.js";
 import { h, GET, POST, DEL, handle, toast, num, pct, when, confirmBox, palette } from "../ui.js";
 import { onCleanup } from "../app.js";
-import { SEX, FIELD_LABEL } from "./common.js";
+import { SEX, FIELD_LABEL, reasonMatches } from "./common.js";
 
 let drawer = null;
 async function defaultModel(pref) {
@@ -24,7 +24,7 @@ export async function openPersonDrawer(pid, ctx = {}) {
   if (ctx.question && ctx.answer) {
     say("sys", t("You asked: “{q}”", { q: ctx.question.text }));
     const a = ctx.answer, top = a.spread.indexOf(Math.max(...a.spread));
-    say("them", `${a.reason || ctx.question.options[a.pick]}`);
+    say("them", a.reason && reasonMatches(a) ? a.reason : ctx.question.options[a.pick]);
     say("sys", ctx.question.options.map((o, i) => `${o} ${pct(a.spread[i])}`).join(" · "));
   } else say("sys", t("Ask them anything. They answer as this person, from their record only."));
   const send = async e => {

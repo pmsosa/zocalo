@@ -23,6 +23,20 @@ def _sampled_choice(spread: list[float], key: tuple) -> int:
     return len(spread) - 1
 
 
+def _reason_for(pick: int, rows: list[dict]) -> tuple[str, int | None]:
+    """The reason behind the drawn answer, from any model's reading of this person; else the reason for their
+    likeliest answer, with the answer it belongs to so the page can say so."""
+    for r in rows:
+        text = (db.loads(r.get("reasons_json"), {}) or {}).get(str(pick))
+        if text:
+            return text, pick
+    for r in rows:
+        if r.get("answer_idx") == pick and r.get("reason"):
+            return r["reason"], pick
+    first = next((r for r in rows if r.get("reason")), None)
+    return (first["reason"], first["answer_idx"]) if first else ("", None)
+
+
 def _share(rows: list[dict], n_opts: int) -> np.ndarray:
     if not rows:
         return np.zeros(n_opts)
@@ -41,7 +55,7 @@ def compute(study_id: int, flt: dict | None = None, lang: str = "en") -> dict:
     country = pop.get("country", "US")
     is_sub = bool(flt) or bool(study["filter"]) or bool(study.get("panel_id"))
     rows = db.q("SELECT a.question_id, a.person_id, a.arm, a.model_ref, a.spread_json, a.answer_idx, a.reason, "
-                "p.base_json, p.weight, p.name FROM answers a JOIN people p ON p.id=a.person_id "
+                "a.reasons_json, p.base_json, p.weight, p.name FROM answers a JOIN people p ON p.id=a.person_id "
                 "WHERE a.study_id=? AND a.ok=1", study_id)
     people: dict[int, dict] = {}
     by_q: dict[int, list[dict]] = defaultdict(list)
@@ -67,11 +81,13 @@ def compute(study_id: int, flt: dict | None = None, lang: str = "en") -> dict:
         merged = []
         for (pid, arm), rs in per_person_arm.items():
             spread = np.mean([x["spread"] for x in rs], axis=0).tolist()
+            pick = _sampled_choice(spread, (study_id, q["id"], pid, arm))
+            reason, reason_for = _reason_for(pick, rs)
             merged.append({"person_id": pid, "arm": arm, "spread": spread, "weight": rs[0]["weight"],
-                           "reason": rs[0]["reason"]})
+                           "pick": pick, "reason": reason})
             ans = people[pid]["answers"].setdefault(str(q["id"]), {})
-            ans[arm] = {"spread": [round(x, 3) for x in spread], "pick": _sampled_choice(spread, (study_id, q["id"], pid, arm)),
-                        "reason": rs[0]["reason"]}
+            ans[arm] = {"spread": [round(x, 3) for x in spread], "pick": pick, "reason": reason,
+                        "reason_for": reason_for}
         arms = sorted({m["arm"] for m in merged}, key=lambda a: ["main", "A", "B", "control", "treatment", "placebo",
                                                                  "within_before", "within_after"].index(a)
                       if a in ["main", "A", "B", "control", "treatment", "placebo", "within_before", "within_after"] else 99)
@@ -79,8 +95,7 @@ def compute(study_id: int, flt: dict | None = None, lang: str = "en") -> dict:
         for arm in arms:
             ar = [m for m in merged if m["arm"] == arm]
             share = _share(ar, n_opts)
-            picks = np.bincount([_sampled_choice(m["spread"], (study_id, q["id"], m["person_id"], arm)) for m in ar],
-                                minlength=n_opts)
+            picks = np.bincount([m["pick"] for m in ar], minlength=n_opts)
             per_model = {}
             if len(models) > 1:
                 for mref in models:

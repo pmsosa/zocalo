@@ -43,7 +43,9 @@ class FakeModel:
                     probs[ln[0]] = p_first
             s = sum(probs.values())
             probs = {k: v / s for k, v in probs.items()}
-            return providers.Completion(json.dumps({"probabilities": probs, "answer": max(probs, key=probs.get), "reason": "Because."}), 100, 20)
+            shown = {ln[0]: ln[3:] for ln in text.split("Options:")[1].splitlines() if len(ln) > 2 and ln[1] == "."}
+            reasons = {L: f"I'd say {shown[L]}." for L, v in probs.items() if v >= 0.05}
+            return providers.Completion(json.dumps({"probabilities": probs, "answer": max(probs, key=probs.get), "reasons": reasons}), 100, 20)
         if "probabilities" in text:
             return providers.Completion('{"probabilities": {"A": 0.5, "B": 0.5}}', 50, 10)
         return providers.Completion("I'd say so, yes.", 80, 10)
@@ -102,6 +104,16 @@ def test_ask_maps_letters_back_to_options():
     a = asyncio.run(answering.ask(ref, rec, answering.Asked("Q?", ["Yes", "No", "Not sure"], order)))
     assert abs(sum(a.spread) - 1) < 1e-6 and a.spread[0] == pytest.approx(0.8, abs=1e-6)
     assert a.answer_idx == 0 and a.cost > 0
+    assert a.reason == "I'd say Yes." and a.reasons[1] == "I'd say No."
+
+
+def test_reason_matches_the_drawn_answer_or_says_whose_it_is():
+    from zocalo.studies.results import _reason_for
+    new = [{"reasons_json": json.dumps({"0": "Yes, because.", "1": "No, because."}), "answer_idx": 0, "reason": "Yes, because."}]
+    assert _reason_for(1, new) == ("No, because.", 1)
+    old = [{"reasons_json": None, "answer_idx": 0, "reason": "Yes, because."}]
+    assert _reason_for(1, old) == ("Yes, because.", 0)   # older study: labelled as the reason for answer 0
+    assert _reason_for(0, old) == ("Yes, because.", 0)
 
 
 def test_profile_has_facts_only_and_no_name():
@@ -193,6 +205,11 @@ def test_full_study_flow_and_api():
         assert q["effects"]["treatment_vs_placebo"] is not None
         assert q["arms"]["control"]["error"]["kind"] in ("prior", "measured")
         assert len(res["people"]) == 60
+        opts = q["options"]
+        for p in res["people"]:
+            for a in p["answers"][str(q["id"])].values():
+                if a["spread"][a["pick"]] >= 0.1:
+                    assert a["reason"] == f"I'd say {opts[a['pick']]}." and a["reason_for"] == a["pick"]
         # filtered results and CSV
         res2 = c.post(f"/api/studies/{sid}/results", json={"filter": {"age_min": 50}}).json()
         assert all(p["f"]["age"] >= 50 for p in res2["people"])

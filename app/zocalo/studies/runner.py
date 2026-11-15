@@ -100,10 +100,11 @@ async def _answer_one(study, q, person, arm, mref, sem, lang):
         spent = 0.0
         for arm_name, a in results:
             db.ex("INSERT INTO answers(study_id,question_id,person_id,branch_id,arm,model_ref,spread_json,answer_idx,"
-                  "reason,prompt_hash,option_order_json,seed,tokens_in,tokens_out,cost,ok,created_at) "
-                  "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)", study["id"], q["id"], person["id"],
+                  "reason,reasons_json,prompt_hash,option_order_json,seed,tokens_in,tokens_out,cost,ok,created_at) "
+                  "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)", study["id"], q["id"], person["id"],
                   person.get("branch_id"), arm_name, mref, json.dumps([round(x, 4) for x in a.spread]), a.answer_idx,
-                  a.reason, a.prompt_hash, json.dumps(order), study_seed(study["id"]), a.tokens_in, a.tokens_out,
+                  a.reason, json.dumps({str(k): v for k, v in a.reasons.items()}) if a.reasons else None,
+                  a.prompt_hash, json.dumps(order), study_seed(study["id"]), a.tokens_in, a.tokens_out,
                   a.cost, db.now())
             usage.record(study["id"], "study", mref, a.tokens_in, a.tokens_out, a.cost)
             spent += a.cost

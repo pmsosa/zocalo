@@ -70,7 +70,11 @@ interviewed doesn't carry that conversation into their next survey.
 
 For every question, each person gets one model call. The call contains the person's facts, the question and the
 options. **The person states a probability for every option** ("60% yes, 30% no, 10% not sure") and gives a one-line
-reason in their own voice.
+reason in their own voice for each answer they'd give at least a 10% chance.
+
+On the study page each dot is one person, placed at an answer drawn from their spread, so the dots add up to the
+shares. The reason shown is the one for that drawn answer. (Studies run before November 2026 kept only the reason for
+the likeliest answer; when the drawn answer differs, the page says whose reason it is.)
 
 Why spreads rather than single answers: several studies found that asking a model for one answer per person makes
 everyone pick the same option. The spread of answers comes out far too narrow, and options real people choose never
