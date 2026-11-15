@@ -43,13 +43,16 @@ export function createDots(stage, opts) {
     if (!W || layout === "sphere" || !people.length) return;
     const gf = groupOf || (p => catOf(p));
     const buckets = new Map();
-    for (const p of people) { const k = gf(p); if (k == null) continue; if (!buckets.has(k)) buckets.set(k, []); buckets.get(k).push(p); }
-    let keys = [...buckets.keys()];
+    // people with no value get their own group, last; left out, they'd keep their old spot and sit on another group
+    for (const p of people) { const k = gf(p) ?? "__none"; if (!buckets.has(k)) buckets.set(k, []); buckets.get(k).push(p); }
+    let keys = [...buckets.keys()].filter(k => k !== "__none");
     if (groupOrder) keys.sort((a, b) => groupOrder.indexOf(a) - groupOrder.indexOf(b));
     else keys.sort((a, b) => buckets.get(b).length - buckets.get(a).length);
-    if (keys.length > 12) { // fold the long tail into "Other"
-      const rest = keys.slice(11).flatMap(k => buckets.get(k)); keys = keys.slice(0, 11); buckets.set("__other", rest); keys.push("__other");
+    const cap = buckets.has("__none") ? 11 : 12;
+    if (keys.length > cap) { // fold the long tail into "Other"
+      const rest = keys.slice(cap - 1).flatMap(k => buckets.get(k)); keys = keys.slice(0, cap - 1); buckets.set("__other", rest); keys.push("__other");
     }
+    if (buckets.has("__none")) keys.push("__none");
     const max = Math.max(1, ...keys.map(k => buckets.get(k).length));
     const narrow = W < 640;
     const perRow = narrow ? Math.min(keys.length, 2) : Math.min(keys.length, keys.length > 6 ? Math.ceil(keys.length / 2) : keys.length);
@@ -65,7 +68,7 @@ export function createDots(stage, opts) {
       const cx = 30 + slotW * (col + .5) + (perRow - inRow) * slotW / 2, cy = top + slotH * (row + .45);
       const R = rMax * Math.sqrt(b.length / max);
       b.forEach((p, i) => { const rr = R * Math.sqrt((i + .5) / b.length), th = i * GA; p._gx = cx + Math.cos(th) * rr; p._gy = cy + Math.sin(th) * rr; });
-      return { k, label: k === "__other" ? t("Other") : (labelOf ? labelOf(k) : String(k)), cx, cy, R, people: b };
+      return { k, label: k === "__other" ? t("Other") : k === "__none" ? t("Not recorded") : (labelOf ? labelOf(k) : String(k)), cx, cy, R, people: b };
     });
   }
 

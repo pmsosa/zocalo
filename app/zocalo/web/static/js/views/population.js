@@ -1,6 +1,6 @@
 // Populations: build one (demo or from real data), then explore it as dots with filters.
 import { t } from "../i18n.js";
-import { h, GET, POST, DEL, handle, toast, num, when, confirmBox, palette, statusTag } from "../ui.js";
+import { h, GET, POST, DEL, handle, toast, num, when, confirmBox, palette, statusTag, swatch } from "../ui.js";
 import { onCleanup } from "../app.js";
 import { createDots } from "../dots.js";
 import { personTip, filterEditor, matches, describe, legend, segmented, FIELD_LABEL, SEX, ageBand, AGE_ORDER } from "./common.js";
@@ -42,6 +42,8 @@ export async function render([id], v) {
     const vs = values(colorBy).slice(0, 8);
     dots.setColor(vs.map(x => colorBy === "sex" ? SEX(x) : x), p => { const i = vs.indexOf(val(p, colorBy)); return i < 0 ? 7 : i; });
     legend(legendEl, vs.map(x => colorBy === "sex" ? SEX(x) : x), palette(vs.length, false));
+    // people with no value are drawn grey (index 7 has no colour while there are fewer than 8 values)
+    if (vs.length < 8 && people.some(p => val(p, colorBy) == null)) legendEl.append(h("span", swatch("#999", 0), t("Not recorded")));
   }
   function grouping() {
     if (layout === "sphere") return dots.setLayout("sphere");
