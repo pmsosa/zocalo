@@ -81,7 +81,7 @@ export function swatch(col, k, size = 10) {
   const shapes = ['<rect x="1" y="1" width="8" height="8"/>', '<circle cx="5" cy="5" r="4.4"/>', '<path d="M5 .5 9.5 9H.5z"/>',
     '<path d="M5 0 10 5 5 10 0 5z"/>', '<path d="M1 3h8v4H1z"/>', '<path d="M3 1h4v8H3z"/>', '<circle cx="5" cy="5" r="2.6"/>', '<path d="M1 1h8L5 9z"/>'];
   const span = document.createElement("span");
-  span.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 10 10" style="margin-right:6px;vertical-align:-1px" fill="${col}">${UI.shapes ? shapes[k % shapes.length] : shapes[0]}</svg>`;
+  span.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 10 10" style="margin-right:6px;vertical-align:-1px" fill="${col}">${UI.shapes ? shapes[k % shapes.length] : '<circle cx="5" cy="5" r="4.4"/>'}</svg>`;
   return span.firstChild;
 }
 

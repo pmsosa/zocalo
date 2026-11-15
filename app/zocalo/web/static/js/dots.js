@@ -73,7 +73,8 @@ export function createDots(stage, opts) {
   }
 
   function dot(k, x, y, s) {
-    if (!UI.shapes || k === 0) { ctx.fillRect(x - s / 2, y - s / 2, s, s); return; }
+    if (!UI.shapes) { ctx.beginPath(); ctx.arc(x, y, s * .56, 0, 7); ctx.fill(); return; }  // round, same area as the square
+    if (k === 0) { ctx.fillRect(x - s / 2, y - s / 2, s, s); return; }
     ctx.beginPath();
     const m = k % 4;
     if (m === 1) ctx.arc(x, y, s * .58, 0, 7);
@@ -119,7 +120,8 @@ export function createDots(stage, opts) {
       const half = (b.el.offsetWidth || 200) / 2;
       b.el.style.left = Math.max(half + 6, Math.min(W - half - 6, b.p._x)) + "px"; b.el.style.top = Math.max((b.el.offsetHeight || 60) + 18, b.p._y) + "px";
     }
-    if (hover) { ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--ink"); ctx.lineWidth = 1; ctx.strokeRect(hover._x - 5, hover._y - 5, 10, 10); }
+    if (hover) { ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--ink"); ctx.lineWidth = 1;
+      if (UI.shapes) ctx.strokeRect(hover._x - 5, hover._y - 5, 10, 10); else { ctx.beginPath(); ctx.arc(hover._x, hover._y, 5.5, 0, 7); ctx.stroke(); } }
     if (tMix > .5 && layout !== "sphere") {
       ctx.globalAlpha = (tMix - .5) * 2;
       const ink = getComputedStyle(document.documentElement).getPropertyValue("--ink");
