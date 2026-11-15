@@ -33,11 +33,16 @@ export function createDots(stage, opts) {
     });
     people = list; computeTargets();
   }
-  function setColor(categories, fn) { cats = categories; catOf = fn; cols = palette(cats.length, opts.lastIsUnsure !== false); computeTargets(); }
+  // lastIsUnsure: the last category is "Not sure" and drawn grey (answers); other fields get a colour for every value
+  let lastUnsure = opts.lastIsUnsure !== false;
+  function setColor(categories, fn, lastIsUnsure) {
+    cats = categories; catOf = fn; if (lastIsUnsure != null) lastUnsure = lastIsUnsure;
+    cols = palette(cats.length, lastUnsure); computeTargets();
+  }
   function setGroups(fn, ordering, labeller) { groupOf = fn; groupOrder = ordering || null; labelOf = labeller || null; computeTargets(); }
   function setLayout(l) { layout = l; computeTargets(); if (l !== "sphere") clearBubbles(); }
   function setSelected(fn) { selected = fn || (() => true); }
-  function refreshPalette() { cols = palette(cats.length, opts.lastIsUnsure !== false); }
+  function refreshPalette() { cols = palette(cats.length, lastUnsure); }
 
   function computeTargets() {
     if (!W || layout === "sphere" || !people.length) return;

@@ -732,7 +732,15 @@ def doc(name: str, lang: str = "en"):
 
 
 # ---------- the web app ----------
-app.mount("/static", StaticFiles(directory=WEB_DIR / "static"), name="static")
+class _Static(StaticFiles):
+    """Static files that the browser re-checks every time (a cheap 304 when unchanged), so an update shows at once."""
+    async def get_response(self, path, scope):
+        r = await super().get_response(path, scope)
+        r.headers["Cache-Control"] = "no-cache"
+        return r
+
+
+app.mount("/static", _Static(directory=WEB_DIR / "static"), name="static")
 
 
 @app.get("/sw.js")

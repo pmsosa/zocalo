@@ -1,10 +1,10 @@
 // A study: cost check and run, then results with labelled error, the population as dots, filters,
 // effects, subgroups, anchors, human-sample correction, and conversations with any respondent.
 import { t, lang } from "../i18n.js";
-import { h, GET, POST, DEL, api, handle, toast, palette, money, num, pct, progressBar, statusTag, confirmBox, twoTone, UI } from "../ui.js";
+import { h, GET, POST, DEL, api, handle, toast, palette, money, num, pct, progressBar, statusTag, confirmBox, twoTone, UI, swatch } from "../ui.js";
 import { onCleanup } from "../app.js";
 import { createDots } from "../dots.js";
-import { bars, diffBars, errorNote, howMade, personTip, reasonMatches, filterEditor, matches, describe, legend, segmented, FIELD_LABEL, SEX, ageBand, AGE_ORDER } from "./common.js";
+import { bars, diffBars, errorNote, howMade, personTip, reasonMatches, filterEditor, matches, describe, legend, segmented, FIELD_LABEL, SEX, ageBand, AGE_ORDER, NO_VALUE } from "./common.js";
 import { kindLabel } from "./home.js";
 import { openPersonDrawer } from "./people.js";
 
@@ -95,15 +95,16 @@ async function renderResults(st, v) {
 
   function colour() {
     const qq = q();
-    if (colorBy === "answer") { dots.setColor(qq.options, pick); legend(legendEl, qq.options, palette(qq.options.length)); }
+    if (colorBy === "answer") { dots.setColor(qq.options, pick, true); legend(legendEl, qq.options, palette(qq.options.length)); }
     else {
       const f = colorBy, vals = [...new Set(res.people.map(p => f === "age_band" ? ageBand(p.f.age) : p.f[f]).filter(x => x != null))];
       if (f === "age_band") vals.sort((a, b) => AGE_ORDER.indexOf(a) - AGE_ORDER.indexOf(b));
-      const idx = p => Math.max(0, vals.indexOf(f === "age_band" ? ageBand(p.f.age) : p.f[f]));
+      const v = p => f === "age_band" ? ageBand(p.f.age) : p.f[f];
       const cats = vals.slice(0, 8);
-      dots.setColor(cats.map(x => f === "sex" ? SEX(x) : x), p => Math.min(idx(p), 7));
-      dots.dotsUnsure = false;
+      // no value: grey (an index past the palette), never the first value's colour
+      dots.setColor(cats.map(x => f === "sex" ? SEX(x) : x), p => v(p) == null ? NO_VALUE : Math.min(vals.indexOf(v(p)), 7), false);
       legend(legendEl, cats.map(x => f === "sex" ? SEX(x) : x), palette(cats.length, false));
+      if (res.people.some(p => v(p) == null)) legendEl.append(h("span", swatch("#999", 0), t("Not recorded")));
     }
   }
   function grouping() {

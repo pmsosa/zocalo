@@ -1,5 +1,5 @@
 // Zócalo service worker: the app shell works offline; data always comes from the network.
-const CACHE = "zocalo-shell-v3";
+const CACHE = "zocalo-shell-v4";
 const SHELL = ["/", "/manifest.webmanifest", "/static/css/app.css", "/static/js/app.js", "/static/js/ui.js", "/static/js/dots.js",
   "/static/js/i18n.js", "/static/i18n/es.json", ...["home", "newstudy", "study", "population", "people", "admin", "docs", "common"].map(v => `/static/js/views/${v}.js`),
   "/static/icons/favicon.svg", "/static/icons/small-light.svg", "/static/icons/small-dark.svg", "/static/icons/favicon-32.png", "/static/icons/favicon-64.png",

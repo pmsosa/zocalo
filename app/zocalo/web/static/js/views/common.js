@@ -55,6 +55,9 @@ export function diffBars(options, diff, label) {
   })));
 }
 
+// colour index for people with no value for the field: past every palette, so it draws grey
+export const NO_VALUE = 99;
+
 // The reason shown is for the answer they gave; older studies only kept the reason for their likeliest answer.
 export const reasonMatches = a => a.reason_for == null || a.reason_for === a.pick;
 
